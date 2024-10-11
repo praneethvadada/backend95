@@ -2,6 +2,7 @@
 const { MCQDomain, CodingQuestionDomain, Admin, AllowedLanguage } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { CodingQuestion, PracticeQuestion, MCQQuestion } = require('../models');
 
 // Setup multer for file uploads
 const storage = multer.memoryStorage();  // Storing file in memory as a buffer
@@ -254,5 +255,319 @@ exports.deleteCodingDomain = async (req, res) => {
     res.status(200).json({ message: 'Coding Domain deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting Coding Domain', error });
+  }
+};
+
+
+
+
+
+// // Admin changes approval status of a question
+// exports.updateApprovalStatus = async (req, res) => {
+//   try {
+//     const { question_id, question_type, question_category, approval_status } = req.body;
+
+//     // Validate approval_status
+//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
+//       return res.status(400).json({ message: 'Invalid approval status' });
+//     }
+
+//     // Update coding question or mcq question depending on the category
+//     let question;
+//     if (question_category === 'coding') {
+//       question = await CodingQuestion.findByPk(question_id);
+//     } else if (question_category === 'mcq') {
+//       question = await MCQQuestion.findByPk(question_id);
+//     }
+
+//     if (!question) {
+//       return res.status(404).json({ message: 'Question not found' });
+//     }
+
+//     // Update approval status
+//     question.approval_status = approval_status;
+//     await question.save();
+
+//     // If the question is approved and is a practice question, add it to PracticeQuestions table
+//     if (approval_status === 'approved' && question.question_type === 'practice') {
+//       await PracticeQuestion.create({
+//         coding_question_id: question_category === 'coding' ? question.id : null,
+//         mcq_question_id: question_category === 'mcq' ? question.id : null,
+//         created_by: req.user.id  // Assume admin's ID is attached to req.user.id
+//       });
+//     }
+
+//     res.status(200).json({ message: 'Approval status updated successfully', question });
+//   } catch (error) {
+//     console.error('Error updating approval status:', error);
+//     res.status(500).json({ message: 'Error updating approval status', error });
+//   }
+// };
+
+
+// // Admin updates the approval status of a coding question
+// exports.updateCodingQuestionApprovalStatus = async (req, res) => {
+//   try {
+//     const { question_id, approval_status } = req.body;
+
+//     // Validate approval_status
+//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
+//       return res.status(400).json({ message: 'Invalid approval status' });
+//     }
+
+//     // Find the coding question by ID
+//     const codingQuestion = await CodingQuestion.findByPk(question_id);
+
+//     if (!codingQuestion) {
+//       return res.status(404).json({ message: 'Coding Question not found' });
+//     }
+
+//     // Update approval status
+//     codingQuestion.approval_status = approval_status;
+//     await codingQuestion.save();
+
+//     // If the question is approved and is a practice question, add it to PracticeQuestions table
+//     if (approval_status === 'approved' && codingQuestion.question_type === 'practice') {
+//       await PracticeQuestion.create({
+//         coding_question_id: codingQuestion.id,
+//         created_by: req.user.id  // Assume admin's ID is attached to req.user.id
+//       });
+//     }
+
+//     res.status(200).json({ message: 'Coding Question approval status updated successfully', codingQuestion });
+//   } catch (error) {
+//     console.error('Error updating coding question approval status:', error);
+//     res.status(500).json({ message: 'Error updating coding question approval status', error });
+//   }
+// };
+
+
+
+
+// // Admin updates the approval status of an MCQ question
+// exports.updateMCQQuestionApprovalStatus = async (req, res) => {
+//   try {
+//     const { question_id, approval_status } = req.body;
+
+//     // Validate approval_status
+//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
+//       return res.status(400).json({ message: 'Invalid approval status' });
+//     }
+
+//     // Find the MCQ question by ID
+//     const mcqQuestion = await MCQQuestion.findByPk(question_id);
+
+//     if (!mcqQuestion) {
+//       return res.status(404).json({ message: 'MCQ Question not found' });
+//     }
+
+//     // Update approval status
+//     mcqQuestion.approval_status = approval_status;
+//     await mcqQuestion.save();
+
+//     // If the question is approved and is a practice question, add it to PracticeQuestions table
+//     if (approval_status === 'approved' && mcqQuestion.question_type === 'practice') {
+//       await PracticeQuestion.create({
+//         mcq_question_id: mcqQuestion.id,
+//         created_by: req.user.id  // Assume admin's ID is attached to req.user.id
+//       });
+//     }
+
+//     res.status(200).json({ message: 'MCQ Question approval status updated successfully', mcqQuestion });
+//   } catch (error) {
+//     console.error('Error updating MCQ question approval status:', error);
+//     res.status(500).json({ message: 'Error updating MCQ question approval status', error });
+//   }
+// };
+
+
+// // Admin updates the approval status of a coding question
+// exports.updateCodingQuestionApprovalStatus = async (req, res) => {
+//   try {
+//     const { question_id, approval_status } = req.body;
+
+//     // Validate approval_status
+//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
+//       return res.status(400).json({ message: 'Invalid approval status' });
+//     }
+
+//     // Find the coding question by ID
+//     const codingQuestion = await CodingQuestion.findByPk(question_id);
+
+//     if (!codingQuestion) {
+//       return res.status(404).json({ message: 'Coding Question not found' });
+//     }
+
+//     // Update approval status
+//     codingQuestion.approval_status = approval_status;
+//     await codingQuestion.save();
+
+//     // If approved and it's a practice question, add to PracticeQuestions table
+//     if (approval_status === 'approved' && codingQuestion.question_type === 'practice') {
+//       await PracticeQuestion.create({
+//         coding_question_id: codingQuestion.id,
+//         created_by: req.user.id
+//       });
+//     }
+
+//     res.status(200).json({ message: 'Coding Question approval status updated successfully', codingQuestion });
+//   } catch (error) {
+//     console.error('Error updating coding question approval status:', error);
+//     res.status(500).json({ message: 'Error updating coding question approval status', error });
+//   }
+// };
+
+
+// // Admin updates the approval status of an MCQ question
+// exports.updateMCQQuestionApprovalStatus = async (req, res) => {
+//   try {
+//     const { question_id, approval_status } = req.body;
+
+//     // Validate approval_status
+//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
+//       return res.status(400).json({ message: 'Invalid approval status' });
+//     }
+
+//     // Find the MCQ question by ID
+//     const mcqQuestion = await MCQQuestion.findByPk(question_id);
+
+//     if (!mcqQuestion) {
+//       return res.status(404).json({ message: 'MCQ Question not found' });
+//     }
+
+//     // Update approval status
+//     mcqQuestion.approval_status = approval_status;
+//     await mcqQuestion.save();
+
+//     // If approved and it's a practice question, add to PracticeQuestions table
+//     if (approval_status === 'approved' && mcqQuestion.question_type === 'practice') {
+//       await PracticeQuestion.create({
+//         mcq_question_id: mcqQuestion.id,
+//         created_by: req.user.id
+//       });
+//     }
+
+//     res.status(200).json({ message: 'MCQ Question approval status updated successfully', mcqQuestion });
+//   } catch (error) {
+//     console.error('Error updating MCQ question approval status:', error);
+//     res.status(500).json({ message: 'Error updating MCQ question approval status', error });
+//   }
+// };
+
+
+
+// Admin updates the approval status of a coding question
+exports.updateCodingQuestionApprovalStatus = async (req, res) => {
+  try {
+    const { question_id } = req.params;  // Get question ID from URL
+    const {  approval_status } = req.body;
+
+    // Validate approval_status
+    if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
+      return res.status(400).json({ message: 'Invalid approval status' });
+    }
+
+    // Find the coding question by ID
+    const codingQuestion = await CodingQuestion.findByPk(question_id);
+
+    if (!codingQuestion) {
+      return res.status(404).json({ message: 'Coding Question not found' });
+    }
+
+    // Update approval status
+    codingQuestion.approval_status = approval_status;
+    await codingQuestion.save();
+
+    // If approved and it's a practice question, add to PracticeQuestions table
+    if (approval_status === 'approved' && codingQuestion.question_type === 'practice') {
+      await PracticeQuestion.create({
+        coding_question_id: codingQuestion.id,
+        created_by: req.user.id
+      });
+    }
+
+    res.status(200).json({ message: 'Coding Question approval status updated successfully', codingQuestion });
+  } catch (error) {
+    console.error('Error updating coding question approval status:', error);
+    res.status(500).json({ message: 'Error updating coding question approval status', error });
+  }
+};
+
+
+
+// Admin updates the approval status of an MCQ question
+exports.updateMCQQuestionApprovalStatus = async (req, res) => {
+  try {
+    const { question_id } = req.params;  // Get question ID from URL
+
+    const {  approval_status } = req.body;
+
+    // Validate approval_status
+    if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
+      return res.status(400).json({ message: 'Invalid approval status' });
+    }
+
+    // Find the MCQ question by ID
+    const mcqQuestion = await MCQQuestion.findByPk(question_id);
+
+    if (!mcqQuestion) {
+      return res.status(404).json({ message: 'MCQ Question not found' });
+    }
+
+    // Update approval status
+    mcqQuestion.approval_status = approval_status;
+    await mcqQuestion.save();
+
+    // If approved and it's a practice question, add to PracticeQuestions table
+    if (approval_status === 'approved' && mcqQuestion.question_type === 'practice') {
+      await PracticeQuestion.create({
+        mcq_question_id: mcqQuestion.id,
+        created_by: req.user.id
+      });
+    }
+
+    res.status(200).json({ message: 'MCQ Question approval status updated successfully', mcqQuestion });
+  } catch (error) {
+    console.error('Error updating MCQ question approval status:', error);
+    res.status(500).json({ message: 'Error updating MCQ question approval status', error });
+  }
+};
+
+
+// Admin fetches all pending coding questions
+exports.getAllPendingCodingQuestions = async (req, res) => {
+  try {
+    // Fetch all coding questions with approval_status set to 'pending'
+    const pendingCodingQuestions = await CodingQuestion.findAll({
+      where: { approval_status: 'pending' }
+    });
+
+    if (!pendingCodingQuestions.length) {
+      return res.status(404).json({ message: 'No pending coding questions found' });
+    }
+
+    res.status(200).json({ message: 'Pending coding questions fetched successfully', pendingCodingQuestions });
+  } catch (error) {
+    console.error('Error fetching pending coding questions:', error);
+    res.status(500).json({ message: 'Error fetching pending coding questions', error });
+  }
+};
+
+// Admin fetches all pending MCQ questions
+exports.getAllPendingMCQQuestions = async (req, res) => {
+  try {
+    // Fetch all MCQ questions with approval_status set to 'pending'
+    const pendingMCQQuestions = await MCQQuestion.findAll({
+      where: { approval_status: 'pending' }
+    });
+
+    if (!pendingMCQQuestions.length) {
+      return res.status(404).json({ message: 'No pending MCQ questions found' });
+    }
+
+    res.status(200).json({ message: 'Pending MCQ questions fetched successfully', pendingMCQQuestions });
+  } catch (error) {
+    console.error('Error fetching pending MCQ questions:', error);
+    res.status(500).json({ message: 'Error fetching pending MCQ questions', error });
   }
 };

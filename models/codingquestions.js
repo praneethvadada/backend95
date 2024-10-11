@@ -54,7 +54,6 @@ module.exports = (sequelize, DataTypes) => {
     codingquestiondomain_id: {
       allowNull: true, // Now nullable
       type: DataTypes.INTEGER,
-      allowNull: false,
       references: {
         model: 'CodingQuestionDomains',
         key: 'id'
