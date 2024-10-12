@@ -72,6 +72,30 @@ const verifyCollege = (req, res, next) => {
   });
 };
 
+// const verifyStudent = (req, res, next) => {
+//   const token = req.headers['authorization'];
+//   if (!token) {
+//     return res.status(403).json({ message: 'Token is required' });
+//   }
+
+//   const actualToken = token.split(' ')[1];
+
+//   jwt.verify(actualToken, process.env.STUDENT_JWT_SECRET, (err, decoded) => {
+//     if (err) {
+//       return res.status(401).json({ message: 'Token verification failed' });
+//     }
+
+//     if (decoded.role !== 'student') {
+//       return res.status(403).json({ message: 'Student access only' });
+//     }
+
+//     req.user = decoded;
+//     next();
+//   });
+// };
+
+
+// Middleware to verify student tokens
 const verifyStudent = (req, res, next) => {
   const token = req.headers['authorization'];
   if (!token) {
@@ -80,6 +104,7 @@ const verifyStudent = (req, res, next) => {
 
   const actualToken = token.split(' ')[1];
 
+  // Verify using STUDENT secret
   jwt.verify(actualToken, process.env.STUDENT_JWT_SECRET, (err, decoded) => {
     if (err) {
       return res.status(401).json({ message: 'Token verification failed' });
@@ -89,10 +114,11 @@ const verifyStudent = (req, res, next) => {
       return res.status(403).json({ message: 'Student access only' });
     }
 
-    req.user = decoded;
+    req.user = decoded;  // This should include batch_id in the token payload
     next();
   });
 };
+
 
 module.exports = {
   verifyAdmin,

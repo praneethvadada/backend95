@@ -53,6 +53,8 @@ module.exports = (sequelize, DataTypes) => {
       }
     }
   }, {});
-
+  MCQQuestion.associate = (models) => {
+    MCQQuestion.hasMany(models.BatchPracticeQuestion, { foreignKey: 'mcq_question_id' });
+  };
   return MCQQuestion;
 };

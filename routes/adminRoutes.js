@@ -44,6 +44,8 @@ router.get('/admin-mcq-question/:question_id', verifyAdmin, trainerController.ge
 router.get('/pending-coding-questions', verifyAdmin, adminController.getAllPendingCodingQuestions);
 router.get('/pending-mcq-questions', verifyAdmin, adminController.getAllPendingMCQQuestions);
 
+router.post('/add-questions-to-batch/:batch_id', verifyAdmin, adminController.addQuestionsToBatch);
+router.post('/remove-questions-from-batch/:batch_id', verifyAdmin, adminController.removeQuestionsFromBatch);
 
 
 

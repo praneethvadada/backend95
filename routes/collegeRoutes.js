@@ -3,6 +3,7 @@ const router = express.Router();
 const collegeController = require('../controllers/collegeController');
 const { verifyAdmin  } = require('../middleware/authMiddleware');
 
+router.post('/login', collegeController.collegeLogin);
 router.post('/add-college', verifyAdmin, collegeController.createCollege);
 router.get('/get-colleges',verifyAdmin, collegeController.getColleges);
 router.get('/get/:id', collegeController.getCollegeById);

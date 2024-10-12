@@ -71,7 +71,9 @@ module.exports = (sequelize, DataTypes) => {
       through: 'CodingQuestionLanguages',
       foreignKey: 'coding_question_id',
       otherKey: 'language_id'
-    });
+    },
+    CodingQuestion.hasMany(models.BatchPracticeQuestion, { foreignKey: 'coding_question_id' })
+  );
   };
   
   return CodingQuestion;

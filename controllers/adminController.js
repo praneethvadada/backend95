@@ -2,7 +2,7 @@
 const { MCQDomain, CodingQuestionDomain, Admin, AllowedLanguage } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { CodingQuestion, PracticeQuestion, MCQQuestion } = require('../models');
+const { CodingQuestion, PracticeQuestion, MCQQuestion, Batch, BatchPracticeQuestion} = require('../models');
 
 // Setup multer for file uploads
 const storage = multer.memoryStorage();  // Storing file in memory as a buffer
@@ -569,5 +569,174 @@ exports.getAllPendingMCQQuestions = async (req, res) => {
   } catch (error) {
     console.error('Error fetching pending MCQ questions:', error);
     res.status(500).json({ message: 'Error fetching pending MCQ questions', error });
+  }
+};
+
+
+
+
+// // Add multiple questions (coding or mcq) to a batch
+// exports.addQuestionsToBatch = async (req, res) => {
+//   try {
+//     const { batch_id } = req.params;
+//     const { coding_question_ids, mcq_question_ids } = req.body;
+
+//     // Check if the batch exists
+//     const batch = await Batch.findByPk(batch_id);
+//     if (!batch) {
+//       return res.status(404).json({ message: 'Batch not found' });
+//     }
+
+//     // Ensure at least one list of questions is provided
+//     if ((!coding_question_ids || coding_question_ids.length === 0) && (!mcq_question_ids || mcq_question_ids.length === 0)) {
+//       return res.status(400).json({ message: 'No questions provided to add' });
+//     }
+
+//     // Add coding questions if provided
+//     if (coding_question_ids && coding_question_ids.length > 0) {
+//       for (let coding_question_id of coding_question_ids) {
+//         const codingQuestion = await CodingQuestion.findByPk(coding_question_id);
+//         if (codingQuestion && codingQuestion.approval_status === 'approved') {
+//           await BatchPracticeQuestion.create({
+//             batch_id,
+//             coding_question_id,
+//             mcq_question_id: null
+//           });
+//         }
+//       }
+//     }
+
+//     // Add MCQ questions if provided
+//     if (mcq_question_ids && mcq_question_ids.length > 0) {
+//       for (let mcq_question_id of mcq_question_ids) {
+//         const mcqQuestion = await MCQQuestion.findByPk(mcq_question_id);
+//         if (mcqQuestion && mcqQuestion.approval_status === 'approved') {
+//           await BatchPracticeQuestion.create({
+//             batch_id,
+//             coding_question_id: null,
+//             mcq_question_id
+//           });
+//         }
+//       }
+//     }
+
+//     res.status(201).json({ message: 'Questions added to batch successfully' });
+//   } catch (error) {
+//     console.error('Error adding questions to batch:', error);
+//     res.status(500).json({ message: 'Error adding questions to batch', error });
+//   }
+// };
+
+
+
+// Remove multiple questions (coding or mcq) from a batch
+exports.removeQuestionsFromBatch = async (req, res) => {
+  try {
+    const { batch_id } = req.params;
+    const { coding_question_ids, mcq_question_ids } = req.body;
+
+    // Ensure at least one list of questions is provided
+    if ((!coding_question_ids || coding_question_ids.length === 0) && (!mcq_question_ids || mcq_question_ids.length === 0)) {
+      return res.status(400).json({ message: 'No questions provided to remove' });
+    }
+
+    // Remove coding questions if provided
+    if (coding_question_ids && coding_question_ids.length > 0) {
+      for (let coding_question_id of coding_question_ids) {
+        const batchQuestion = await BatchPracticeQuestion.findOne({
+          where: { batch_id, coding_question_id }
+        });
+        if (batchQuestion) {
+          await batchQuestion.destroy();
+        }
+      }
+    }
+
+    // Remove MCQ questions if provided
+    if (mcq_question_ids && mcq_question_ids.length > 0) {
+      for (let mcq_question_id of mcq_question_ids) {
+        const batchQuestion = await BatchPracticeQuestion.findOne({
+          where: { batch_id, mcq_question_id }
+        });
+        if (batchQuestion) {
+          await batchQuestion.destroy();
+        }
+      }
+    }
+
+    res.status(200).json({ message: 'Questions removed from batch successfully' });
+  } catch (error) {
+    console.error('Error removing questions from batch:', error);
+    res.status(500).json({ message: 'Error removing questions from batch', error });
+  }
+};
+
+
+exports.addQuestionsToBatch = async (req, res) => {
+  try {
+    const { batch_id } = req.params; // Get batch_id from params
+    const { coding_question_ids, mcq_question_ids } = req.body; // Get the question IDs from the request body
+
+    // Log the incoming data for debugging
+    console.log('Batch ID:', batch_id);
+    console.log('Coding Question IDs:', coding_question_ids);
+    console.log('MCQ Question IDs:', mcq_question_ids);
+
+    // Process Coding Questions
+    if (coding_question_ids && coding_question_ids.length > 0) {
+      for (let codingQuestionId of coding_question_ids) {
+        // Log each coding question ID being processed
+        console.log('Processing Coding Question ID:', codingQuestionId);
+
+        const [batchPracticeQuestion, created] = await BatchPracticeQuestion.findOrCreate({
+          where: {
+            batch_id: batch_id,
+            coding_question_id: codingQuestionId,
+          },
+          defaults: {
+            created_by: req.user.id, // Assuming req.user.id holds the admin's ID
+          },
+        });
+
+        // Log the result of each insert
+        if (created) {
+          console.log(`Coding Question ID ${codingQuestionId} added to batch ${batch_id}`);
+        } else {
+          console.log(`Coding Question ID ${codingQuestionId} already exists in batch ${batch_id}`);
+        }
+      }
+    }
+
+    // Process MCQ Questions
+    if (mcq_question_ids && mcq_question_ids.length > 0) {
+      for (let mcqQuestionId of mcq_question_ids) {
+        // Log each MCQ question ID being processed
+        console.log('Processing MCQ Question ID:', mcqQuestionId);
+
+        const [batchPracticeQuestion, created] = await BatchPracticeQuestion.findOrCreate({
+          where: {
+            batch_id: batch_id,
+            mcq_question_id: mcqQuestionId,
+          },
+          defaults: {
+            created_by: req.user.id,
+          },
+        });
+
+        // Log the result of each insert
+        if (created) {
+          console.log(`MCQ Question ID ${mcqQuestionId} added to batch ${batch_id}`);
+        } else {
+          console.log(`MCQ Question ID ${mcqQuestionId} already exists in batch ${batch_id}`);
+        }
+      }
+    }
+
+    res.status(201).json({ message: 'Questions added to batch successfully' });
+
+  } catch (error) {
+    // Log the error
+    console.error('Error adding questions to batch:', error);
+    res.status(500).json({ message: 'Error adding questions to batch', error });
   }
 };
