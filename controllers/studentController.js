@@ -54,7 +54,7 @@ exports.getStudentById = async (req, res) => {
 exports.updateStudent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, password, batch_id } = req.body;
+    const { name, email, password } = req.body;
 
     const student = await Student.findByPk(id);
     if (!student) {
@@ -62,13 +62,13 @@ exports.updateStudent = async (req, res) => {
     }
 
     // Check if batch exists
-    const batch = await Batch.findByPk(batch_id);
-    if (!batch) {
-      return res.status(404).json({ message: 'Batch not found' });
-    }
+    // const batch = await Batch.findByPk(batch_id);
+    // if (!batch) {
+    //   return res.status(404).json({ message: 'Batch not found' });
+    // }
 
     // Update student
-    await student.update({ name, email, password, batch_id });
+    await student.update({ name, email, password });
     res.status(200).json({ message: 'Student updated successfully', student });
   } catch (error) {
     console.error('Error updating student:', error);

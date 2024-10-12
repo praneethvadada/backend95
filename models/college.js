@@ -28,7 +28,6 @@ module.exports = (sequelize, DataTypes) => {
   
   College.associate = (models) => {
     College.hasMany(models.Batch, { foreignKey: 'college_id' });
-    College.hasMany(models.Student, { foreignKey: 'college_id' });
   };
   
   return College;
