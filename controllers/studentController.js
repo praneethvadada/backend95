@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { BatchPracticeQuestions, CodingQuestion, MCQQuestion, Student, Batch} = require('../models');
+const { BatchPracticeQuestion, CodingQuestion, MCQQuestion, Student, Batch} = require('../models');
 const db = require('../models');
 
 

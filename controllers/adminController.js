@@ -672,70 +672,128 @@ exports.removeQuestionsFromBatch = async (req, res) => {
 };
 
 
-exports.addQuestionsToBatch = async (req, res) => {
-  try {
-    const { batch_id } = req.params; // Get batch_id from params
-    const { coding_question_ids, mcq_question_ids } = req.body; // Get the question IDs from the request body
+// exports.addQuestionsToBatch = async (req, res) => {
+//   try {
+//     const { batch_id } = req.params; // Get batch_id from params
+//     const { coding_question_ids, mcq_question_ids } = req.body; // Get the question IDs from the request body
 
-    // Log the incoming data for debugging
-    console.log('Batch ID:', batch_id);
-    console.log('Coding Question IDs:', coding_question_ids);
-    console.log('MCQ Question IDs:', mcq_question_ids);
+//     // Log the incoming data for debugging
+//     console.log('Batch ID:', batch_id);
+//     console.log('Coding Question IDs:', coding_question_ids);
+//     console.log('MCQ Question IDs:', mcq_question_ids);
+
+//     // Process Coding Questions
+//     if (coding_question_ids && coding_question_ids.length > 0) {
+//       for (let codingQuestionId of coding_question_ids) {
+//         // Log each coding question ID being processed
+//         console.log('Processing Coding Question ID:', codingQuestionId);
+
+//         const [batchPracticeQuestion, created] = await BatchPracticeQuestion.findOrCreate({
+//           where: {
+//             batch_id: batch_id,
+//             coding_question_id: codingQuestionId,
+//           },
+//           defaults: {
+//             created_by: req.user.id, // Assuming req.user.id holds the admin's ID
+//           },
+//         });
+
+//         // Log the result of each insert
+//         if (created) {
+//           console.log(`Coding Question ID ${codingQuestionId} added to batch ${batch_id}`);
+//         } else {
+//           console.log(`Coding Question ID ${codingQuestionId} already exists in batch ${batch_id}`);
+//         }
+//       }
+//     }
+
+//     // Process MCQ Questions
+//     if (mcq_question_ids && mcq_question_ids.length > 0) {
+//       for (let mcqQuestionId of mcq_question_ids) {
+//         // Log each MCQ question ID being processed
+//         console.log('Processing MCQ Question ID:', mcqQuestionId);
+
+//         const [batchPracticeQuestion, created] = await BatchPracticeQuestion.findOrCreate({
+//           where: {
+//             batch_id: batch_id,
+//             mcq_question_id: mcqQuestionId,
+//           },
+//           defaults: {
+//             created_by: req.user.id,
+//           },
+//         });
+
+//         // Log the result of each insert
+//         if (created) {
+//           console.log(`MCQ Question ID ${mcqQuestionId} added to batch ${batch_id}`);
+//         } else {
+//           console.log(`MCQ Question ID ${mcqQuestionId} already exists in batch ${batch_id}`);
+//         }
+//       }
+//     }
+
+//     res.status(201).json({ message: 'Questions added to batch successfully' });
+
+//   } catch (error) {
+//     // Log the error
+//     console.error('Error adding questions to batch:', error);
+//     res.status(500).json({ message: 'Error adding questions to batch', error });
+//   }
+// };
+
+
+// Add questions (both coding and MCQ) to a batch
+exports.addQuestionsToBatch = async (req, res) => {
+  const { batch_id } = req.params;
+  const { coding_question_ids, mcq_question_ids } = req.body;
+
+  try {
+    // Initialize an array to store all questions to be added
+    let questionsToAdd = [];
 
     // Process Coding Questions
     if (coding_question_ids && coding_question_ids.length > 0) {
-      for (let codingQuestionId of coding_question_ids) {
-        // Log each coding question ID being processed
-        console.log('Processing Coding Question ID:', codingQuestionId);
-
-        const [batchPracticeQuestion, created] = await BatchPracticeQuestion.findOrCreate({
-          where: {
-            batch_id: batch_id,
-            coding_question_id: codingQuestionId,
-          },
-          defaults: {
-            created_by: req.user.id, // Assuming req.user.id holds the admin's ID
-          },
+      for (let coding_question_id of coding_question_ids) {
+        const codingQuestion = await CodingQuestion.findOne({
+          where: { id: coding_question_id, approval_status: 'approved' }
         });
 
-        // Log the result of each insert
-        if (created) {
-          console.log(`Coding Question ID ${codingQuestionId} added to batch ${batch_id}`);
-        } else {
-          console.log(`Coding Question ID ${codingQuestionId} already exists in batch ${batch_id}`);
+        if (codingQuestion) {
+          questionsToAdd.push({
+            batch_id,
+            coding_question_id: codingQuestion.id,
+            created_by: req.user.id  // Assuming admin or authorized user
+          });
         }
       }
     }
 
     // Process MCQ Questions
     if (mcq_question_ids && mcq_question_ids.length > 0) {
-      for (let mcqQuestionId of mcq_question_ids) {
-        // Log each MCQ question ID being processed
-        console.log('Processing MCQ Question ID:', mcqQuestionId);
-
-        const [batchPracticeQuestion, created] = await BatchPracticeQuestion.findOrCreate({
-          where: {
-            batch_id: batch_id,
-            mcq_question_id: mcqQuestionId,
-          },
-          defaults: {
-            created_by: req.user.id,
-          },
+      for (let mcq_question_id of mcq_question_ids) {
+        const mcqQuestion = await MCQQuestion.findOne({
+          where: { id: mcq_question_id, approval_status: 'approved' }
         });
 
-        // Log the result of each insert
-        if (created) {
-          console.log(`MCQ Question ID ${mcqQuestionId} added to batch ${batch_id}`);
-        } else {
-          console.log(`MCQ Question ID ${mcqQuestionId} already exists in batch ${batch_id}`);
+        if (mcqQuestion) {
+          questionsToAdd.push({
+            batch_id,
+            mcq_question_id: mcqQuestion.id,
+            created_by: req.user.id
+          });
         }
       }
     }
 
-    res.status(201).json({ message: 'Questions added to batch successfully' });
+    // Bulk insert questions to BatchPracticeQuestions
+    if (questionsToAdd.length > 0) {
+      await BatchPracticeQuestion.bulkCreate(questionsToAdd);
+      res.status(201).json({ message: 'Questions added to batch successfully' });
+    } else {
+      res.status(400).json({ message: 'No approved questions to add to batch' });
+    }
 
   } catch (error) {
-    // Log the error
     console.error('Error adding questions to batch:', error);
     res.status(500).json({ message: 'Error adding questions to batch', error });
   }

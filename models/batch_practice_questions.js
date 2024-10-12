@@ -1,5 +1,3 @@
-
-// models/batchpracticequestion.js
 'use strict';
 module.exports = (sequelize, DataTypes) => {
   const BatchPracticeQuestion = sequelize.define('BatchPracticeQuestion', {
@@ -13,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     coding_question_id: {
       type: DataTypes.INTEGER,
-      allowNull: true,  // Coding questions can be nullable if it's an MCQ
+      allowNull: true,
       references: {
         model: 'CodingQuestions',
         key: 'id'
@@ -21,25 +19,26 @@ module.exports = (sequelize, DataTypes) => {
     },
     mcq_question_id: {
       type: DataTypes.INTEGER,
-      allowNull: true,  // MCQ questions can be nullable if it's a coding question
+      allowNull: true,
       references: {
         model: 'MCQQuestions',
-        key: 'id'
-      }
-    },
-    created_by: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'Admins',
         key: 'id'
       }
     }
   }, {});
 
-  BatchPracticeQuestion.associate = (models) => {
-    BatchPracticeQuestion.belongsTo(models.CodingQuestion, { foreignKey: 'coding_question_id', as: 'codingQuestion' });
-    BatchPracticeQuestion.belongsTo(models.MCQQuestion, { foreignKey: 'mcq_question_id', as: 'mcqQuestion' });
+  BatchPracticeQuestion.associate = function(models) {
+    // Associate BatchPracticeQuestion with CodingQuestion
+    BatchPracticeQuestion.belongsTo(models.CodingQuestion, {
+      foreignKey: 'coding_question_id',
+      as: 'codingQuestion'
+    });
+
+    // Associate BatchPracticeQuestion with MCQQuestion
+    BatchPracticeQuestion.belongsTo(models.MCQQuestion, {
+      foreignKey: 'mcq_question_id',
+      as: 'mcqQuestion'
+    });
   };
 
   return BatchPracticeQuestion;
@@ -71,31 +70,13 @@ module.exports = (sequelize, DataTypes) => {
 //         model: 'MCQQuestions',
 //         key: 'id'
 //       }
-//     },
-//     created_by: {
-//       type: DataTypes.INTEGER,
-//       allowNull: false,
-//       references: {
-//         model: 'Admins',
-//         key: 'id'
-//       }
 //     }
 //   }, {});
-
-//   // Associations
-//   // BatchPracticeQuestion.associate = (models) => {
-//   //   BatchPracticeQuestion.belongsTo(models.Batch, { foreignKey: 'batch_id' });
-//   //   BatchPracticeQuestion.belongsTo(models.CodingQuestion, { foreignKey: 'coding_question_id' });
-//   //   BatchPracticeQuestion.belongsTo(models.MCQQuestion, { foreignKey: 'mcq_question_id' });
-//   // };
-//   BatchPracticeQuestion.associate = (models) => {
-//     BatchPracticeQuestion.belongsTo(models.CodingQuestion, { foreignKey: 'coding_question_id', as: 'coding_question' });
-//     BatchPracticeQuestion.belongsTo(models.MCQQuestion, { foreignKey: 'mcq_question_id', as: 'mcq_question' });
-//   };
 
 //   return BatchPracticeQuestion;
 // };
 
+// // // models/batchpracticequestion.js
 // // 'use strict';
 // // module.exports = (sequelize, DataTypes) => {
 // //   const BatchPracticeQuestion = sequelize.define('BatchPracticeQuestion', {
@@ -109,7 +90,7 @@ module.exports = (sequelize, DataTypes) => {
 // //     },
 // //     coding_question_id: {
 // //       type: DataTypes.INTEGER,
-// //       allowNull: true,
+// //       allowNull: true,  // Coding questions can be nullable if it's an MCQ
 // //       references: {
 // //         model: 'CodingQuestions',
 // //         key: 'id'
@@ -117,7 +98,7 @@ module.exports = (sequelize, DataTypes) => {
 // //     },
 // //     mcq_question_id: {
 // //       type: DataTypes.INTEGER,
-// //       allowNull: true,
+// //       allowNull: true,  // MCQ questions can be nullable if it's a coding question
 // //       references: {
 // //         model: 'MCQQuestions',
 // //         key: 'id'
@@ -133,27 +114,24 @@ module.exports = (sequelize, DataTypes) => {
 // //     }
 // //   }, {});
 
+// //   BatchPracticeQuestion.associate = (models) => {
+// //     BatchPracticeQuestion.belongsTo(models.CodingQuestion, { foreignKey: 'coding_question_id', as: 'codingQuestion' });
+// //     BatchPracticeQuestion.belongsTo(models.MCQQuestion, { foreignKey: 'mcq_question_id', as: 'mcqQuestion' });
+// //   };
+
 // //   return BatchPracticeQuestion;
 // // };
 
-// // // // models/batchPracticeQuestions.js
 // // // 'use strict';
 // // // module.exports = (sequelize, DataTypes) => {
-// // //   const BatchPracticeQuestions = sequelize.define('BatchPracticeQuestions', {
-// // //     id: {
-// // //       type: DataTypes.INTEGER,
-// // //       autoIncrement: true,
-// // //       primaryKey: true
-// // //     },
+// // //   const BatchPracticeQuestion = sequelize.define('BatchPracticeQuestion', {
 // // //     batch_id: {
 // // //       type: DataTypes.INTEGER,
 // // //       allowNull: false,
 // // //       references: {
 // // //         model: 'Batches',
 // // //         key: 'id'
-// // //       },
-// // //       onDelete: 'CASCADE',
-// // //       onUpdate: 'CASCADE'
+// // //       }
 // // //     },
 // // //     coding_question_id: {
 // // //       type: DataTypes.INTEGER,
@@ -161,9 +139,7 @@ module.exports = (sequelize, DataTypes) => {
 // // //       references: {
 // // //         model: 'CodingQuestions',
 // // //         key: 'id'
-// // //       },
-// // //       onDelete: 'SET NULL',
-// // //       onUpdate: 'CASCADE'
+// // //       }
 // // //     },
 // // //     mcq_question_id: {
 // // //       type: DataTypes.INTEGER,
@@ -171,29 +147,130 @@ module.exports = (sequelize, DataTypes) => {
 // // //       references: {
 // // //         model: 'MCQQuestions',
 // // //         key: 'id'
-// // //       },
-// // //       onDelete: 'SET NULL',
-// // //       onUpdate: 'CASCADE'
+// // //       }
 // // //     },
 // // //     created_by: {
 // // //       type: DataTypes.INTEGER,
-// // //       allowNull: true,
+// // //       allowNull: false,
 // // //       references: {
 // // //         model: 'Admins',
 // // //         key: 'id'
-// // //       },
-// // //       onDelete: 'SET NULL',
-// // //       onUpdate: 'CASCADE'
+// // //       }
 // // //     }
 // // //   }, {});
 
-// // //   // Define relationships (if needed)
-// // //   BatchPracticeQuestions.associate = function(models) {
-// // //     BatchPracticeQuestions.belongsTo(models.Batch, { foreignKey: 'batch_id' });
-// // //     BatchPracticeQuestions.belongsTo(models.CodingQuestion, { foreignKey: 'coding_question_id' });
-// // //     BatchPracticeQuestions.belongsTo(models.MCQQuestion, { foreignKey: 'mcq_question_id' });
-// // //     BatchPracticeQuestions.belongsTo(models.Admin, { foreignKey: 'created_by' });
+// // //   // Associations
+// // //   // BatchPracticeQuestion.associate = (models) => {
+// // //   //   BatchPracticeQuestion.belongsTo(models.Batch, { foreignKey: 'batch_id' });
+// // //   //   BatchPracticeQuestion.belongsTo(models.CodingQuestion, { foreignKey: 'coding_question_id' });
+// // //   //   BatchPracticeQuestion.belongsTo(models.MCQQuestion, { foreignKey: 'mcq_question_id' });
+// // //   // };
+// // //   BatchPracticeQuestion.associate = (models) => {
+// // //     BatchPracticeQuestion.belongsTo(models.CodingQuestion, { foreignKey: 'coding_question_id', as: 'coding_question' });
+// // //     BatchPracticeQuestion.belongsTo(models.MCQQuestion, { foreignKey: 'mcq_question_id', as: 'mcq_question' });
 // // //   };
 
-// // //   return BatchPracticeQuestions;
+// // //   return BatchPracticeQuestion;
 // // // };
+
+// // // // 'use strict';
+// // // // module.exports = (sequelize, DataTypes) => {
+// // // //   const BatchPracticeQuestion = sequelize.define('BatchPracticeQuestion', {
+// // // //     batch_id: {
+// // // //       type: DataTypes.INTEGER,
+// // // //       allowNull: false,
+// // // //       references: {
+// // // //         model: 'Batches',
+// // // //         key: 'id'
+// // // //       }
+// // // //     },
+// // // //     coding_question_id: {
+// // // //       type: DataTypes.INTEGER,
+// // // //       allowNull: true,
+// // // //       references: {
+// // // //         model: 'CodingQuestions',
+// // // //         key: 'id'
+// // // //       }
+// // // //     },
+// // // //     mcq_question_id: {
+// // // //       type: DataTypes.INTEGER,
+// // // //       allowNull: true,
+// // // //       references: {
+// // // //         model: 'MCQQuestions',
+// // // //         key: 'id'
+// // // //       }
+// // // //     },
+// // // //     created_by: {
+// // // //       type: DataTypes.INTEGER,
+// // // //       allowNull: false,
+// // // //       references: {
+// // // //         model: 'Admins',
+// // // //         key: 'id'
+// // // //       }
+// // // //     }
+// // // //   }, {});
+
+// // // //   return BatchPracticeQuestion;
+// // // // };
+
+// // // // // // models/batchPracticeQuestions.js
+// // // // // 'use strict';
+// // // // // module.exports = (sequelize, DataTypes) => {
+// // // // //   const BatchPracticeQuestions = sequelize.define('BatchPracticeQuestions', {
+// // // // //     id: {
+// // // // //       type: DataTypes.INTEGER,
+// // // // //       autoIncrement: true,
+// // // // //       primaryKey: true
+// // // // //     },
+// // // // //     batch_id: {
+// // // // //       type: DataTypes.INTEGER,
+// // // // //       allowNull: false,
+// // // // //       references: {
+// // // // //         model: 'Batches',
+// // // // //         key: 'id'
+// // // // //       },
+// // // // //       onDelete: 'CASCADE',
+// // // // //       onUpdate: 'CASCADE'
+// // // // //     },
+// // // // //     coding_question_id: {
+// // // // //       type: DataTypes.INTEGER,
+// // // // //       allowNull: true,
+// // // // //       references: {
+// // // // //         model: 'CodingQuestions',
+// // // // //         key: 'id'
+// // // // //       },
+// // // // //       onDelete: 'SET NULL',
+// // // // //       onUpdate: 'CASCADE'
+// // // // //     },
+// // // // //     mcq_question_id: {
+// // // // //       type: DataTypes.INTEGER,
+// // // // //       allowNull: true,
+// // // // //       references: {
+// // // // //         model: 'MCQQuestions',
+// // // // //         key: 'id'
+// // // // //       },
+// // // // //       onDelete: 'SET NULL',
+// // // // //       onUpdate: 'CASCADE'
+// // // // //     },
+// // // // //     created_by: {
+// // // // //       type: DataTypes.INTEGER,
+// // // // //       allowNull: true,
+// // // // //       references: {
+// // // // //         model: 'Admins',
+// // // // //         key: 'id'
+// // // // //       },
+// // // // //       onDelete: 'SET NULL',
+// // // // //       onUpdate: 'CASCADE'
+// // // // //     }
+// // // // //   }, {});
+
+// // // // //   // Define relationships (if needed)
+// // // // //   BatchPracticeQuestions.associate = function(models) {
+// // // // //     BatchPracticeQuestions.belongsTo(models.Batch, { foreignKey: 'batch_id' });
+// // // // //     BatchPracticeQuestions.belongsTo(models.CodingQuestion, { foreignKey: 'coding_question_id' });
+// // // // //     BatchPracticeQuestions.belongsTo(models.MCQQuestion, { foreignKey: 'mcq_question_id' });
+// // // // //     BatchPracticeQuestions.belongsTo(models.Admin, { foreignKey: 'created_by' });
+// // // // //   };
+
+// // // // //   return BatchPracticeQuestions;
+// // // // // };

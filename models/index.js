@@ -1,5 +1,4 @@
-﻿
-'use strict';
+﻿'use strict';
 
 const fs = require('fs');
 const path = require('path');
@@ -40,7 +39,7 @@ Object.keys(db).forEach(modelName => {
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
-db.BatchPracticeQuestion = require('./batch_practice_questions')(sequelize, Sequelize.DataTypes);
+// db.BatchPracticeQuestion = require('./batch_practice_questions')(sequelize, Sequelize.DataTypes);
 
 module.exports = db;
 
