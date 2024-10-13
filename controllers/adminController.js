@@ -2,7 +2,7 @@
 const { MCQDomain, CodingQuestionDomain, Admin, AllowedLanguage } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { CodingQuestion, PracticeQuestion, MCQQuestion, Batch, BatchPracticeQuestion} = require('../models');
+const { AssessmentRound, Assessment, CodingQuestion, PracticeQuestion, MCQQuestion, Batch, BatchPracticeQuestion} = require('../models');
 
 // Setup multer for file uploads
 const storage = multer.memoryStorage();  // Storing file in memory as a buffer
@@ -742,59 +742,394 @@ exports.removeQuestionsFromBatch = async (req, res) => {
 // };
 
 
-// Add questions (both coding and MCQ) to a batch
+// // Add questions (both coding and MCQ) to a batch
+// exports.addQuestionsToBatch = async (req, res) => {
+//   const { batch_id } = req.params;
+//   const { coding_question_ids, mcq_question_ids } = req.body;
+
+//   try {
+//     // Initialize an array to store all questions to be added
+//     let questionsToAdd = [];
+
+//     // Process Coding Questions
+//     if (coding_question_ids && coding_question_ids.length > 0) {
+//       for (let coding_question_id of coding_question_ids) {
+//         const codingQuestion = await CodingQuestion.findOne({
+//           where: { id: coding_question_id, approval_status: 'approved' }
+//         });
+
+//         if (codingQuestion) {
+//           questionsToAdd.push({
+//             batch_id,
+//             coding_question_id: codingQuestion.id,
+//             created_by: req.user.id  // Assuming admin or authorized user
+//           });
+//         }
+//       }
+//     }
+
+//     // Process MCQ Questions
+//     if (mcq_question_ids && mcq_question_ids.length > 0) {
+//       for (let mcq_question_id of mcq_question_ids) {
+//         const mcqQuestion = await MCQQuestion.findOne({
+//           where: { id: mcq_question_id, approval_status: 'approved' }
+//         });
+
+//         if (mcqQuestion) {
+//           questionsToAdd.push({
+//             batch_id,
+//             mcq_question_id: mcqQuestion.id,
+//             created_by: req.user.id
+//           });
+//         }
+//       }
+//     }
+
+//     // Bulk insert questions to BatchPracticeQuestions
+//     if (questionsToAdd.length > 0) {
+//       await BatchPracticeQuestion.bulkCreate(questionsToAdd);
+//       res.status(201).json({ message: 'Questions added to batch successfully' });
+//     } else {
+//       res.status(400).json({ message: 'No approved questions to add to batch' });
+//     }
+
+//   } catch (error) {
+//     console.error('Error adding questions to batch:', error);
+//     res.status(500).json({ message: 'Error adding questions to batch', error });
+//   }
+// };
+
+
+
+// exports.addQuestionsToBatch = async (req, res) => {
+//   const { batch_id } = req.params; // Get batch_id from URL
+//   const { coding_question_ids, mcq_question_ids } = req.body; // Get question IDs from the body
+
+//   try {
+//     // Validate coding questions
+//     if (coding_question_ids && coding_question_ids.length > 0) {
+//       for (let questionId of coding_question_ids) {
+//         const codingQuestion = await CodingQuestion.findByPk(questionId);
+
+//         // Ensure the question exists and is of type 'practice'
+//         if (!codingQuestion || codingQuestion.question_type !== 'practice') {
+//           return res.status(400).json({ message: `Coding question ID ${questionId} is either not found or is not a practice question.` });
+//         }
+
+//         // Add to BatchPracticeQuestion table
+//         await BatchPracticeQuestion.findOrCreate({
+//           where: { batch_id, coding_question_id: questionId },
+//           defaults: { created_by: req.user.id }
+//         });
+//       }
+//     }
+
+//     // Validate MCQ questions
+//     if (mcq_question_ids && mcq_question_ids.length > 0) {
+//       for (let questionId of mcq_question_ids) {
+//         const mcqQuestion = await MCQQuestion.findByPk(questionId);
+
+//         // Ensure the question exists and is of type 'practice'
+//         if (!mcqQuestion || mcqQuestion.question_type !== 'practice') {
+//           return res.status(400).json({ message: `MCQ question ID ${questionId} is either not found or is not a practice question.` });
+//         }
+
+//         // Add to BatchPracticeQuestion table
+//         await BatchPracticeQuestion.findOrCreate({
+//           where: { batch_id, mcq_question_id: questionId },
+//           defaults: { created_by: req.user.id }
+//         });
+//       }
+//     }
+
+//     res.status(201).json({ message: 'Questions added to batch successfully' });
+//   } catch (error) {
+//     console.error('Error adding questions to batch:', error);
+//     res.status(500).json({ message: 'Error adding questions to batch', error });
+//   }
+// };
+
+
 exports.addQuestionsToBatch = async (req, res) => {
-  const { batch_id } = req.params;
-  const { coding_question_ids, mcq_question_ids } = req.body;
+  const { batch_id } = req.params; // Get batch_id from URL
+  const { coding_question_ids, mcq_question_ids } = req.body; // Get question IDs from the body
 
   try {
-    // Initialize an array to store all questions to be added
-    let questionsToAdd = [];
-
-    // Process Coding Questions
+    // Validate coding questions
     if (coding_question_ids && coding_question_ids.length > 0) {
-      for (let coding_question_id of coding_question_ids) {
-        const codingQuestion = await CodingQuestion.findOne({
-          where: { id: coding_question_id, approval_status: 'approved' }
-        });
+      for (let questionId of coding_question_ids) {
+        const codingQuestion = await CodingQuestion.findByPk(questionId);
 
-        if (codingQuestion) {
-          questionsToAdd.push({
-            batch_id,
-            coding_question_id: codingQuestion.id,
-            created_by: req.user.id  // Assuming admin or authorized user
-          });
+        // Ensure the question exists and is of type 'practice'
+        if (!codingQuestion || codingQuestion.question_type !== 'practice') {
+          return res.status(400).json({ message: `Coding question ID ${questionId} is either not found or is not a practice question.` });
         }
+
+        // Add to BatchPracticeQuestion table
+        await BatchPracticeQuestion.findOrCreate({
+          where: { batch_id, coding_question_id: questionId },
+          defaults: { created_by: req.user.id }
+        });
       }
     }
 
-    // Process MCQ Questions
+    // Validate MCQ questions
     if (mcq_question_ids && mcq_question_ids.length > 0) {
-      for (let mcq_question_id of mcq_question_ids) {
-        const mcqQuestion = await MCQQuestion.findOne({
-          where: { id: mcq_question_id, approval_status: 'approved' }
-        });
+      for (let questionId of mcq_question_ids) {
+        const mcqQuestion = await MCQQuestion.findByPk(questionId);
 
-        if (mcqQuestion) {
-          questionsToAdd.push({
-            batch_id,
-            mcq_question_id: mcqQuestion.id,
-            created_by: req.user.id
-          });
+        // Ensure the question exists and is of type 'practice'
+        if (!mcqQuestion || mcqQuestion.question_type !== 'practice') {
+          return res.status(400).json({ message: `MCQ question ID ${questionId} is either not found or is not a practice question.` });
         }
+
+        // Add to BatchPracticeQuestion table
+        await BatchPracticeQuestion.findOrCreate({
+          where: { batch_id, mcq_question_id: questionId },
+          defaults: { created_by: req.user.id }
+        });
       }
     }
 
-    // Bulk insert questions to BatchPracticeQuestions
-    if (questionsToAdd.length > 0) {
-      await BatchPracticeQuestion.bulkCreate(questionsToAdd);
-      res.status(201).json({ message: 'Questions added to batch successfully' });
-    } else {
-      res.status(400).json({ message: 'No approved questions to add to batch' });
-    }
-
+    res.status(201).json({ message: 'Questions added to batch successfully' });
   } catch (error) {
     console.error('Error adding questions to batch:', error);
     res.status(500).json({ message: 'Error adding questions to batch', error });
   }
 };
+
+
+// Controller to create a new assessment
+exports.createAssessment = async (req, res) => {
+  const { title, description, start_window, end_window, duration_minutes, is_active } = req.body;
+
+  try {
+    // Input validation (ensure required fields are filled)
+    if (!title || !start_window || !end_window || !duration_minutes) {
+      return res.status(400).json({ message: 'Title, Start Window, End Window, and Duration are required.' });
+    }
+
+    // Create the assessment
+    const assessment = await Assessment.create({
+      title,
+      description,
+      start_window,
+      end_window,
+      duration_minutes,
+      is_active: is_active !== undefined ? is_active : true  // Default is_active to true if not provided
+    });
+
+    res.status(201).json({
+      message: 'Assessment created successfully',
+      assessment
+    });
+  } catch (error) {
+    console.error('Error creating assessment:', error);
+    res.status(500).json({
+      message: 'Error creating assessment',
+      error
+    });
+  }
+};
+
+
+
+
+// Controller to create an assessment round
+// exports.createAssessmentRound = async (req, res) => {
+//   try {
+//     const { assessment_id, round_type, round_order } = req.body;
+//     const adminId = req.user.id;  // Assuming admin authentication provides admin ID
+
+//     // Check if the assessment exists
+//     const assessment = await Assessment.findByPk(assessment_id);
+//     if (!assessment) {
+//       return res.status(404).json({ message: 'Assessment not found' });
+//     }
+
+//     // Create a new assessment round
+//     const assessmentRound = await AssessmentRound.create({
+//       assessment_id,
+//       round_type,
+//       created_by: adminId
+//     });
+
+//     res.status(201).json({
+//       message: 'Assessment round created successfully',
+//       assessmentRound
+//     });
+//   } catch (error) {
+//     console.error('Error creating assessment round:', error);
+//     res.status(500).json({ message: 'Error creating assessment round', error });
+//   }
+// };
+
+
+exports.createAssessmentRound = async (req, res) => {
+  try {
+    const { assessment_id, round_type } = req.body;
+    const adminId = req.user.id;  // Assuming admin authentication provides admin ID
+
+    // Check if the assessment exists
+    const assessment = await Assessment.findByPk(assessment_id);
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    // Get the highest round_order for this assessment
+    const lastRound = await AssessmentRound.findOne({
+      where: { assessment_id },
+      order: [['round_order', 'DESC']]
+    });
+
+    // If no round exists, set the round_order to 1, else increment the highest round_order
+    const round_order = lastRound ? lastRound.round_order + 1 : 1;
+
+    // Create a new assessment round
+    const assessmentRound = await AssessmentRound.create({
+      assessment_id,
+      round_type,
+      round_order,
+      created_by: adminId
+    });
+
+    res.status(201).json({
+      message: 'Assessment round created successfully',
+      assessmentRound
+    });
+  } catch (error) {
+    console.error('Error creating assessment round:', error);
+    res.status(500).json({ message: 'Error creating assessment round', error });
+  }
+};
+
+
+
+
+// Controller to fetch all rounds for an assessment
+exports.getRoundsByAssessmentId = async (req, res) => {
+  try {
+    const { assessment_id } = req.params;
+
+    // Fetch all rounds for the specified assessment
+    const assessmentRounds = await AssessmentRound.findAll({
+      where: { assessment_id },
+      order: [['round_order', 'ASC']]
+    });
+
+    if (!assessmentRounds.length) {
+      return res.status(404).json({ message: 'No rounds found for this assessment' });
+    }
+
+    res.status(200).json({
+      message: 'Rounds fetched successfully',
+      assessmentRounds
+    });
+  } catch (error) {
+    console.error('Error fetching assessment rounds:', error);
+    res.status(500).json({ message: 'Error fetching assessment rounds', error });
+  }
+};
+
+// Controller to update an assessment round
+exports.updateAssessmentRound = async (req, res) => {
+  try {
+    const { round_id } = req.params;
+    const { round_type, round_order } = req.body;
+
+    // Find the assessment round by ID
+    const assessmentRound = await AssessmentRound.findByPk(round_id);
+    if (!assessmentRound) {
+      return res.status(404).json({ message: 'Assessment round not found' });
+    }
+
+    // Update the round details
+    await assessmentRound.update({
+      round_type,
+      round_order
+    });
+
+    res.status(200).json({
+      message: 'Assessment round updated successfully',
+      assessmentRound
+    });
+  } catch (error) {
+    console.error('Error updating assessment round:', error);
+    res.status(500).json({ message: 'Error updating assessment round', error });
+  }
+};
+
+// Controller to delete an assessment round
+exports.deleteAssessmentRound = async (req, res) => {
+  try {
+    const { round_id } = req.params;
+
+    // Find the assessment round by ID
+    const assessmentRound = await AssessmentRound.findByPk(round_id);
+    if (!assessmentRound) {
+      return res.status(404).json({ message: 'Assessment round not found' });
+    }
+
+    // Delete the round
+    await assessmentRound.destroy();
+
+    res.status(200).json({ message: 'Assessment round deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting assessment round:', error);
+    res.status(500).json({ message: 'Error deleting assessment round', error });
+  }
+};
+
+
+
+exports.updateRoundOrder = async (req, res) => {
+  try {
+    const { round_id } = req.params;
+
+    const { new_round_order } = req.body;
+    const adminId = req.user.id;  // Assuming admin authentication provides admin ID
+
+    // Find the round by ID
+    const round = await AssessmentRound.findByPk(round_id);
+    if (!round) {
+      return res.status(404).json({ message: 'Assessment round not found' });
+    }
+
+    // Update the round order
+    round.round_order = new_round_order;
+    await round.save();
+
+    res.status(200).json({
+      message: 'Round order updated successfully',
+      round
+    });
+  } catch (error) {
+    console.error('Error updating round order:', error);
+    res.status(500).json({ message: 'Error updating round order', error });
+  }
+};
+
+// exports.updateRoundOrder = async (req, res) => {
+//   try {
+    // const { round_id } = req.params;
+//     const { new_round_order } = req.body;
+
+//     // Find the round by ID
+//     const round = await AssessmentRound.findByPk(round_id);
+//     if (!round) {
+//       return res.status(404).json({ message: 'Assessment round not found' });
+//     }
+
+//     // Update the round order
+//     round.round_order = new_round_order;
+//     await round.save();
+
+//     res.status(200).json({
+//       message: 'Round order updated successfully',
+//       round
+//     });
+//   } catch (error) {
+//     console.error('Error updating round order:', error);
+//     res.status(500).json({ message: 'Error updating round order', error });
+//   }
+// };

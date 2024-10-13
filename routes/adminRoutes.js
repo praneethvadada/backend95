@@ -49,4 +49,16 @@ router.post('/remove-questions-from-batch/:batch_id', verifyAdmin, adminControll
 
 
 
+router.post('/create-assessment', verifyAdmin, adminController.createAssessment);
+
+router.post('/assessment-rounds', verifyAdmin, adminController.createAssessmentRound);
+router.get('/assessment-rounds/:assessment_id', verifyAdmin, adminController.getRoundsByAssessmentId);
+router.put('/assessment-rounds/:round_id', verifyAdmin, adminController.updateAssessmentRound);
+router.delete('/assessment-rounds/:round_id', verifyAdmin, adminController.deleteAssessmentRound);
+
+router.put('/round-order/:round_id', verifyAdmin, adminController.updateRoundOrder);
+
+
+
+
 module.exports = router;

@@ -12,5 +12,7 @@ router.put('/update/:id', studentController.updateStudent);
 router.delete('/delete/:id', studentController.deleteStudent);
 router.get('/batch/:batch_id', studentController.getStudentsByBatchId);
 router.get('/batch-questions', verifyStudent, studentController.getBatchQuestions);
+router.get('/batch-mcq-questions', verifyStudent, studentController.getBatchMCQQuestions);
+router.get('/batch-coding-questions', verifyStudent, studentController.getBatchCodingQuestions);
 
 module.exports = router;

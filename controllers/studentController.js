@@ -522,3 +522,164 @@ exports.getBatchQuestions = async (req, res) => {
     });
   }
 };
+
+
+// // Fetch MCQ questions for the student's batch
+// exports.getBatchMCQQuestions = async (req, res) => {
+//   try {
+//     const studentId = req.user.id;  // Get student ID from JWT payload
+//     const student = await Student.findByPk(studentId);  // Fetch student details
+
+//     if (!student) {
+//       return res.status(404).json({ message: 'Student not found' });
+//     }
+
+//     const batchId = student.batch_id;  // Get batch ID of the student
+
+//     // Fetch batch practice MCQ questions based on the student's batch
+//     const batchMCQQuestions = await BatchPracticeQuestion.findAll({
+//       where: { batch_id: batchId },
+//       include: [
+//         { model: MCQQuestion, where: { approval_status: 'approved' }, attributes: ['id', 'title', 'options', 'correct_answers', 'is_single_answer', 'createdAt'] }
+//       ]
+//     });
+
+//     if (!batchMCQQuestions || batchMCQQuestions.length === 0) {
+//       return res.status(404).json({ message: 'No MCQ questions found for this batch' });
+//     }
+
+//     res.status(200).json({
+//       message: 'MCQ questions fetched successfully',
+//       mcqQuestions: batchMCQQuestions
+//     });
+//   } catch (error) {
+//     console.error('Error fetching batch MCQ questions:', error);
+//     res.status(500).json({
+//       message: 'Error fetching batch MCQ questions',
+//       error
+//     });
+//   }
+// };
+
+
+
+// // Fetch Coding questions for the student's batch
+// exports.getBatchCodingQuestions = async (req, res) => {
+//   try {
+//     const studentId = req.user.id;  // Get student ID from JWT payload
+//     const student = await Student.findByPk(studentId);  // Fetch student details
+
+//     if (!student) {
+//       return res.status(404).json({ message: 'Student not found' });
+//     }
+
+//     const batchId = student.batch_id;  // Get batch ID of the student
+
+//     // Fetch batch practice coding questions based on the student's batch
+//     const batchCodingQuestions = await BatchPracticeQuestion.findAll({
+//       where: { batch_id: batchId },
+//       include: [
+//         { model: CodingQuestion, where: { approval_status: 'approved' }, attributes: ['id', 'title', 'description', 'difficulty', 'createdAt'] }
+//       ]
+//     });
+
+//     if (!batchCodingQuestions || batchCodingQuestions.length === 0) {
+//       return res.status(404).json({ message: 'No coding questions found for this batch' });
+//     }
+
+//     res.status(200).json({
+//       message: 'Coding questions fetched successfully',
+//       codingQuestions: batchCodingQuestions
+//     });
+//   } catch (error) {
+//     console.error('Error fetching batch coding questions:', error);
+//     res.status(500).json({
+//       message: 'Error fetching batch coding questions',
+//       error
+//     });
+//   }
+// };
+
+
+exports.getBatchCodingQuestions = async (req, res) => {
+  try {
+    const studentId = req.user.id;  // Get student ID from JWT payload
+    const student = await Student.findByPk(studentId);  // Fetch student details
+
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    const batchId = student.batch_id;  // Get batch ID of the student
+
+    // Fetch batch practice coding questions based on the student's batch
+    const batchCodingQuestions = await BatchPracticeQuestion.findAll({
+      where: { batch_id: batchId },
+      include: [
+        { 
+          model: CodingQuestion, 
+          as: 'codingQuestion',  // Use the alias 'codingQuestion'
+          where: { approval_status: 'approved' }, 
+          attributes: ['id', 'title', 'description', 'difficulty', 'createdAt'] 
+        }
+      ]
+    });
+
+    if (!batchCodingQuestions || batchCodingQuestions.length === 0) {
+      return res.status(404).json({ message: 'No coding questions found for this batch' });
+    }
+
+    res.status(200).json({
+      message: 'Coding questions fetched successfully',
+      codingQuestions: batchCodingQuestions
+    });
+  } catch (error) {
+    console.error('Error fetching batch coding questions:', error);
+    res.status(500).json({
+      message: 'Error fetching batch coding questions',
+      error
+    });
+  }
+};
+
+
+exports.getBatchMCQQuestions = async (req, res) => {
+  try {
+    const studentId = req.user.id;  // Get student ID from JWT payload
+    const student = await Student.findByPk(studentId);  // Fetch student details
+
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    const batchId = student.batch_id;  // Get batch ID of the student
+
+    // Fetch batch practice MCQ questions based on the student's batch
+    const batchMCQQuestions = await BatchPracticeQuestion.findAll({
+      where: { batch_id: batchId },
+      include: [
+        { 
+          model: MCQQuestion, 
+          as: 'mcqQuestion',  // Use the alias 'mcqQuestion'
+          where: { approval_status: 'approved' }, 
+          attributes: ['id', 'title', 'options', 'correct_answers'] 
+        }
+      ]
+    });
+
+    if (!batchMCQQuestions || batchMCQQuestions.length === 0) {
+      return res.status(404).json({ message: 'No MCQ questions found for this batch' });
+    }
+
+    res.status(200).json({
+      message: 'MCQ questions fetched successfully',
+      mcqQuestions: batchMCQQuestions
+    });
+  } catch (error) {
+    console.error('Error fetching batch MCQ questions:', error);
+    res.status(500).json({
+      message: 'Error fetching batch MCQ questions',
+      error
+    });
+  }
+};
