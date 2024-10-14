@@ -30,16 +30,6 @@ module.exports = (sequelize, DataTypes) => {
         key: 'id'
       }
     },
-    is_coding: {
-      type: DataTypes.BOOLEAN,
-      allowNull: true,
-      defaultValue: false
-    },
-    is_mcq: {
-      type: DataTypes.BOOLEAN,
-      allowNull: true,
-      defaultValue: false
-    }
   }, {});
   
   return AssessmentQuestion;

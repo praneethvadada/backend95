@@ -56,8 +56,10 @@ router.get('/assessment-rounds/:assessment_id', verifyAdmin, adminController.get
 router.put('/assessment-rounds/:round_id', verifyAdmin, adminController.updateAssessmentRound);
 router.delete('/assessment-rounds/:round_id', verifyAdmin, adminController.deleteAssessmentRound);
 
-router.put('/round-order/:round_id', verifyAdmin, adminController.updateRoundOrder);
 
+
+router.get('/assessment-rounds/round-ids/:assessment_id', verifyAdmin, adminController.getRoundIdsByAssessmentId);
+router.put('/update-all-round-orders/:assessment_id', verifyAdmin, adminController.updateAllRoundOrders);
 
 
 

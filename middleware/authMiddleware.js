@@ -96,6 +96,8 @@ const verifyCollege = (req, res, next) => {
 
 
 // Middleware to verify student tokens
+
+
 const verifyStudent = (req, res, next) => {
   const token = req.headers['authorization'];
   if (!token) {
