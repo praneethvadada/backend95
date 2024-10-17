@@ -63,17 +63,35 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('practice', 'assessment'),
       allowNull: false
     },
+    round_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'AssessmentRounds',
+        key: 'id'
+      }
+    }
     
   }, {});
 
+  // CodingQuestion.associate = (models) => {
+  //   CodingQuestion.belongsToMany(models.AllowedLanguage, {
+  //     through: 'CodingQuestionLanguages',
+  //     foreignKey: 'coding_question_id',
+  //     otherKey: 'language_id'
+  //   },
+  //   CodingQuestion.hasMany(models.BatchPracticeQuestion, { foreignKey: 'coding_question_id' }),
+  //   CodingQuestion.belongsTo(models.AssessmentRound, { foreignKey: 'round_id' });  // Association with AssessmentRounds
+
+  // };
   CodingQuestion.associate = (models) => {
     CodingQuestion.belongsToMany(models.AllowedLanguage, {
       through: 'CodingQuestionLanguages',
       foreignKey: 'coding_question_id',
       otherKey: 'language_id'
-    },
-    CodingQuestion.hasMany(models.BatchPracticeQuestion, { foreignKey: 'coding_question_id' })
-  );
+    });
+    CodingQuestion.hasMany(models.BatchPracticeQuestion, { foreignKey: 'coding_question_id' });
+    CodingQuestion.belongsTo(models.AssessmentRound, { foreignKey: 'round_id' });  // Association with AssessmentRounds
   };
   
   return CodingQuestion;

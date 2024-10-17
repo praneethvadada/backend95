@@ -28,4 +28,11 @@ router.get('/coding-question/:question_id', verifyTrainer, trainerController.get
 // Fetch MCQ question by ID (for trainer)
 router.get('/mcq-question/:question_id', verifyTrainer, trainerController.getMCQQuestionById);
 
+
+
+
+
+router.post('/request-password-reset-otp', trainerController.requestPasswordResetOTP);
+router.post('/reset-password-otp', trainerController.resetPasswordWithOTP);
+
 module.exports = router;

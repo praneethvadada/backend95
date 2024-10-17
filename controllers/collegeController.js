@@ -3,6 +3,9 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { College } = require('../models');
+const multer = require('multer');
+const storage = multer.memoryStorage(); // Store files in memory (as a buffer)
+const upload = multer({ storage: storage });
 
 
 // exports.createCollege = async (req, res) => {
@@ -18,34 +21,71 @@ const { College } = require('../models');
 
 
 // Create a new college
-exports.createCollege = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+// exports.createCollege = async (req, res) => {
+//   try {
+//     const { name, email, password } = req.body;
 
-    // Check if the college already exists with the same email
-    const existingCollege = await College.findOne({ where: { email } });
-    if (existingCollege) {
-      return res.status(400).json({ message: 'College with this email already exists' });
+//     // Check if the college already exists with the same email
+//     const existingCollege = await College.findOne({ where: { email } });
+//     if (existingCollege) {
+//       return res.status(400).json({ message: 'College with this email already exists' });
+//     }
+
+//     // Hash the password
+//     const salt = await bcrypt.genSalt(10);
+//     const hashedPassword = await bcrypt.hash(password, salt);
+
+//     // Create the college with the hashed password
+//     const newCollege = await College.create({
+//       name,
+//       email,
+//       password: hashedPassword
+//     });
+
+//     res.status(201).json({ message: 'College created successfully', college: newCollege });
+//   } catch (error) {
+//     console.error('Error creating college:', error);
+//     res.status(500).json({ message: 'Error creating college', error });
+//   }
+// };
+exports.createCollege = [
+  upload.single('logo'), // Multer middleware to handle single file upload with the field name 'logo'
+
+  async (req, res) => {
+    try {
+      const { name, email, password } = req.body;
+
+      // Check if the college already exists with the same email
+      const existingCollege = await College.findOne({ where: { email } });
+      if (existingCollege) {
+        return res.status(400).json({ message: 'College with this email already exists' });
+      }
+
+      // Hash the password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      // Handle the logo (if uploaded)
+      let logo = null;
+      if (req.file) {
+        logo = req.file.buffer; // Store the file buffer in the logo field
+      }
+
+      // Create the college with the hashed password and optional logo
+      const newCollege = await College.create({
+        name,
+        email,
+        password: hashedPassword,
+        logo // Store the logo as BLOB
+      });
+
+      res.status(201).json({ message: 'College created successfully', college: newCollege });
+    } catch (error) {
+      console.error('Error creating college:', error);
+      res.status(500).json({ message: 'Error creating college', error });
     }
-
-    // Hash the password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create the college with the hashed password
-    const newCollege = await College.create({
-      name,
-      email,
-      password: hashedPassword
-    });
-
-    res.status(201).json({ message: 'College created successfully', college: newCollege });
-  } catch (error) {
-    console.error('Error creating college:', error);
-    res.status(500).json({ message: 'Error creating college', error });
   }
-};
-
+];
 
 exports.getColleges = async (req, res) => {
   try {

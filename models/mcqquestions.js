@@ -51,10 +51,21 @@ module.exports = (sequelize, DataTypes) => {
         model: 'Trainers',  // This references the trainer who created the question
         key: 'id'
       }
+    },
+    round_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'AssessmentRounds',
+        key: 'id'
+      }
     }
+
   }, {});
   MCQQuestion.associate = (models) => {
-    MCQQuestion.hasMany(models.BatchPracticeQuestion, { foreignKey: 'mcq_question_id' });
+    MCQQuestion.hasMany(models.BatchPracticeQuestion, { foreignKey: 'mcq_question_id' }),
+    MCQQuestion.belongsTo(models.AssessmentRound, { foreignKey: 'round_id' });  // Association with AssessmentRounds
+  
   };
   return MCQQuestion;
 };

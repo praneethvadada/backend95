@@ -536,7 +536,8 @@ exports.updateCodingQuestionApprovalStatus = async (req, res) => {
     if (approval_status === 'approved' && codingQuestion.question_type === 'assessment' && !codingQuestion.domain_id) {
       await AssessmentQuestion.create({
         coding_question_id: codingQuestion.id,
-        created_by: req.user.id  // Admin ID from token
+        created_by: req.user.id,  // Admin ID from token
+        round_id: codingQuestion.round_id,  // Use the round_id from the coding question
       });
     }
 
@@ -817,7 +818,8 @@ exports.updateMCQQuestionApprovalStatus = async (req, res) => {
       console.log(`Adding MCQ Question ID ${mcqQuestion.id} to AssessmentQuestions table`);
       await AssessmentQuestion.create({
         mcq_question_id: mcqQuestion.id,
-        created_by: req.user.id  // Admin ID from token
+        created_by: req.user.id,  // Admin ID from token
+        round_id: mcqQuestion.round_id,
       });
       console.log(`MCQ Question ID ${mcqQuestion.id} added to AssessmentQuestions`);
     }
@@ -1507,7 +1509,7 @@ exports.getRoundIdsByAssessmentId = async (req, res) => {
     // Fetch all rounds for the given assessment_id
     const assessmentRounds = await AssessmentRound.findAll({
       where: { assessment_id },
-      attributes: ['id', 'round_order'], // Only fetch round id and round order
+      attributes: ['id', 'round_order', 'round_type'], // Only fetch round id and round order
       order: [['round_order', 'ASC']] // Order rounds by their round order
     });
 
@@ -1522,5 +1524,81 @@ exports.getRoundIdsByAssessmentId = async (req, res) => {
   } catch (error) {
     console.error('Error fetching round IDs:', error);
     res.status(500).json({ message: 'Error fetching round IDs', error });
+  }
+};
+
+
+
+// Fetch a specific coding question by ID
+exports.getCodingQuestionById = async (req, res) => {
+  try {
+    const { question_id } = req.params;
+
+    // Find the coding question by ID
+    const codingQuestion = await CodingQuestion.findByPk(question_id);
+
+    if (!codingQuestion) {
+      return res.status(404).json({ message: 'Coding Question not found' });
+    }
+
+    res.status(200).json({
+      message: 'Coding Question fetched successfully',
+      codingQuestion
+    });
+  } catch (error) {
+    console.error('Error fetching coding question by ID:', error);
+    res.status(500).json({
+      message: 'Error fetching coding question',
+      error
+    });
+  }
+};
+
+
+
+// Fetch a specific MCQ question by ID
+exports.getMCQQuestionById = async (req, res) => {
+  try {
+    const { question_id } = req.params;
+
+    // Find the MCQ question by ID
+    const mcqQuestion = await MCQQuestion.findByPk(question_id);
+
+    if (!mcqQuestion) {
+      return res.status(404).json({ message: 'MCQ Question not found' });
+    }
+
+    res.status(200).json({
+      message: 'MCQ Question fetched successfully',
+      mcqQuestion
+    });
+  } catch (error) {
+    console.error('Error fetching MCQ question by ID:', error);
+    res.status(500).json({
+      message: 'Error fetching MCQ question',
+      error
+    });
+  }
+};
+
+
+// Controller to fetch all assessments
+exports.getAllAssessments = async (req, res) => {
+  try {
+    // Fetch all assessments from the database
+    const assessments = await Assessment.findAll();
+
+    if (!assessments || assessments.length === 0) {
+      return res.status(404).json({ message: 'No assessments found' });
+    }
+
+    // Return the list of assessments
+    res.status(200).json({
+      message: 'Assessments fetched successfully',
+      assessments
+    });
+  } catch (error) {
+    console.error('Error fetching assessments:', error);
+    res.status(500).json({ message: 'Error fetching assessments', error });
   }
 };

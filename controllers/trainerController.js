@@ -2,7 +2,9 @@ const { Trainer, MCQQuestion } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { CodingQuestion, AllowedLanguage, CodingQuestionLanguage } = require('../models');
-
+const crypto = require('crypto');
+// const {  } = require('../models');
+const nodemailer = require('nodemailer');
 // Admin adds a new trainer
 exports.createTrainer = async (req, res) => {
   try {
@@ -51,7 +53,7 @@ exports.trainerLogin = async (req, res) => {
 // Add MCQ Question
 exports.addMCQQuestion = async (req, res) => {
   try {
-    const { title, options, correct_answers, is_single_answer, mcqdomain_id, code_snippets, question_type } = req.body;
+    const { title, options, correct_answers, is_single_answer, mcqdomain_id, code_snippets, question_type, round_id } = req.body;
 
     // Create new MCQ question
     const mcqQuestion = await MCQQuestion.create({
@@ -63,7 +65,9 @@ exports.addMCQQuestion = async (req, res) => {
       code_snippets: code_snippets || null,  // Optional code snippets
       question_type,
       approval_status: 'Pending',  // Automatically set to 'Pending' for Admin review
-      created_by: req.user.id  // Trainer's ID, assuming it's stored in req.user.id
+      created_by: req.user.id,  // Trainer's ID, assuming it's stored in req.user.id
+      round_id: round_id || null  // Add round_id, allow it to be null if not provided
+
     });
 
     res.status(201).json({ message: 'MCQ Question created successfully', mcqQuestion });
@@ -90,7 +94,8 @@ exports.addCodingQuestion = async (req, res) => {
       solution,
       allowed_languages,
       codingquestiondomain_id,
-      question_type
+      question_type,
+      round_id,
     } = req.body;
 
     // Debugging - log the allowed_languages before proceeding
@@ -118,7 +123,9 @@ exports.addCodingQuestion = async (req, res) => {
       codingquestiondomain_id: domainId,  // Explicitly set to null if not provided
       question_type,
       approval_status: 'pending',
-      created_by: req.user.id
+      created_by: req.user.id,
+      round_id: round_id || null  // Add round_id, allow it to be null if not provided
+
     });
 
     // Debugging - confirm successful creation
@@ -164,35 +171,7 @@ exports.getRejectedQuestions = async (req, res) => {
 
 
 
-// // Trainer deletes a rejected question (coding or mcq)
-// exports.deleteRejectedQuestion = async (req, res) => {
-//   try {
-//     const { question_id, question_category } = req.body;
 
-//     let question;
-//     if (question_category === 'coding') {
-//       question = await CodingQuestion.findOne({
-//         where: { id: question_id, created_by: req.user.id, approval_status: 'rejected' }
-//       });
-//     } else if (question_category === 'mcq') {
-//       question = await MCQQuestion.findOne({
-//         where: { id: question_id, created_by: req.user.id, approval_status: 'rejected' }
-//       });
-//     }
-
-//     if (!question) {
-//       return res.status(404).json({ message: 'Question not found or not rejected' });
-//     }
-
-//     // Delete the rejected question
-//     await question.destroy();
-
-//     res.status(200).json({ message: 'Rejected question deleted successfully' });
-//   } catch (error) {
-//     console.error('Error deleting rejected question:', error);
-//     res.status(500).json({ message: 'Error deleting rejected question', error });
-//   }
-// };
 
 
 // Trainer deletes a rejected coding question by ID
@@ -247,82 +226,9 @@ exports.deleteRejectedMCQQuestion = async (req, res) => {
 
 
 
-// // Trainer edits a rejected coding question by ID
-// exports.editRejectedCodingQuestionById = async (req, res) => {
-//   try {
-//     const { question_id } = req.params;  // Get question_id from URL
-//     const updated_fields = req.body;  // Directly use the body as updated fields
-
-//     // Log the incoming body to debug
-//     console.log('Received updated fields:', updated_fields);
-
-//     // Check if updated_fields is provided and has any properties to update
-//     if (!updated_fields || Object.keys(updated_fields).length === 0) {
-//       return res.status(400).json({ message: 'No fields to update' });
-//     }
-
-//     // Find the rejected coding question
-//     const codingQuestion = await CodingQuestion.findOne({
-//       where: { id: question_id, created_by: req.user.id, approval_status: 'rejected' }
-//     });
-
-//     if (!codingQuestion) {
-//       return res.status(404).json({ message: 'Coding Question not found or not rejected' });
-//     }
-
-//     // Use `set()` to update fields in Sequelize
-//     codingQuestion.set(updated_fields);
-    
-//     await codingQuestion.save();
-
-//     res.status(200).json({ message: 'Rejected coding question updated successfully', codingQuestion });
-//   } catch (error) {
-//     console.error('Error editing rejected coding question:', error); // Log the error for debugging
-//     res.status(500).json({ message: 'Error editing rejected coding question', error: error.message || error });
-//   }
-// };
 
 
 
-
-
-
-
-
-// // Trainer edits a rejected MCQ question by ID
-// exports.editRejectedMCQQuestionById = async (req, res) => {
-//   try {
-//     const { question_id } = req.params;  // Get question_id from URL
-//     const updated_fields = req.body;  // Directly use the body as updated fields
-
-//     // Log the incoming body to debug
-//     console.log('Received updated fields for MCQ question:', updated_fields);
-
-//     // Check if updated_fields is provided and has any properties to update
-//     if (!updated_fields || Object.keys(updated_fields).length === 0) {
-//       return res.status(400).json({ message: 'No fields to update' });
-//     }
-
-//     // Find the rejected MCQ question
-//     const mcqQuestion = await MCQQuestion.findOne({
-//       where: { id: question_id, created_by: req.user.id, approval_status: 'rejected' }
-//     });
-
-//     if (!mcqQuestion) {
-//       return res.status(404).json({ message: 'MCQ Question not found or not rejected' });
-//     }
-
-//     // Use `set()` to update fields in Sequelize
-//     mcqQuestion.set(updated_fields);
-    
-//     await mcqQuestion.save();
-
-//     res.status(200).json({ message: 'Rejected MCQ question updated successfully', mcqQuestion });
-//   } catch (error) {
-//     console.error('Error editing rejected MCQ question:', error);  // Log the error for debugging
-//     res.status(500).json({ message: 'Error editing rejected MCQ question', error: error.message || error });
-//   }
-// };
 
 
 
@@ -468,5 +374,95 @@ exports.getMCQQuestionById = async (req, res) => {
   } catch (error) {
     console.error('Error fetching MCQ question:', error);
     res.status(500).json({ message: 'Error fetching MCQ question', error });
+  }
+};
+
+
+
+
+// Trainer requests password reset via OTP
+exports.requestPasswordResetOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const trainer = await Trainer.findOne({ where: { email } });
+
+    if (!trainer) {
+      return res.status(404).json({ message: 'Trainer not found' });
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000); // Generate a 6-digit OTP
+    const otpExpiry = Date.now() + 600000; // OTP valid for 10 minutes
+
+    // Store OTP and expiry in database
+    trainer.resetPasswordOTP = otp;
+    trainer.resetPasswordExpires = otpExpiry;
+    await trainer.save();
+
+    // Send OTP via email
+    // const transporter = nodemailer.createTransport({
+    //   service: 'gmail',
+    //   auth: {
+    //     user: process.env.EMAIL_USER,
+    //     pass: process.env.EMAIL_PASS,
+    //   },
+    // });
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'praneethvadada25@gmail.com',  // Your personal Gmail
+        pass: 'Praneeth123@',  // Your Gmail password or App password if using 2FA
+      },
+    });
+    
+
+    const mailOptions = {
+      from: '"CODEABHYAN" <praneethvadada24@gmail.com>',
+      to: email,
+      subject: 'Your Password Reset OTP',
+      text: `Your OTP for password reset is: ${otp}`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return res.status(500).json({ message: 'Error sending OTP', error });
+      }
+      res.status(200).json({ message: 'OTP sent successfully' });
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error requesting password reset', error });
+  }
+};
+
+
+
+// Trainer resets password using OTP
+exports.resetPasswordWithOTP = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    // Find trainer by email and check OTP and expiry
+    const trainer = await Trainer.findOne({
+      where: {
+        email,
+        resetPasswordOTP: otp,
+        resetPasswordExpires: { [Op.gt]: Date.now() }, // OTP is valid if expiry is greater than current time
+      },
+    });
+
+    if (!trainer) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    // Hash new password and save
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    trainer.password = hashedPassword;
+    trainer.resetPasswordOTP = null;  // Remove OTP after use
+    trainer.resetPasswordExpires = null;
+    await trainer.save();
+
+    res.status(200).json({ message: 'Password reset successful' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error resetting password', error });
   }
 };

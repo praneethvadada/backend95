@@ -50,6 +50,7 @@ router.post('/remove-questions-from-batch/:batch_id', verifyAdmin, adminControll
 
 
 router.post('/create-assessment', verifyAdmin, adminController.createAssessment);
+router.get('/assessments', verifyAdmin, adminController.getAllAssessments);
 
 router.post('/assessment-rounds', verifyAdmin, adminController.createAssessmentRound);
 router.get('/assessment-rounds/:assessment_id', verifyAdmin, adminController.getRoundsByAssessmentId);
@@ -61,6 +62,8 @@ router.delete('/assessment-rounds/:round_id', verifyAdmin, adminController.delet
 router.get('/assessment-rounds/round-ids/:assessment_id', verifyAdmin, adminController.getRoundIdsByAssessmentId);
 router.put('/update-all-round-orders/:assessment_id', verifyAdmin, adminController.updateAllRoundOrders);
 
+router.get('/admin-coding-question/:question_id', verifyAdmin, adminController.getCodingQuestionById);
+router.get('/admin-mcq-question/:question_id', verifyAdmin, adminController.getMCQQuestionById);
 
 
 module.exports = router;
