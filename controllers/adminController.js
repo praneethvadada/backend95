@@ -903,7 +903,7 @@ exports.getAllPendingCodingQuestions = async (req, res) => {
     });
 
     if (!pendingCodingQuestions.length) {
-      return res.status(404).json({ message: 'No pending coding questions found' });
+      return res.status(200).json({ message: 'No pending coding questions found' });
     }
 
     res.status(200).json({ message: 'Pending coding questions fetched successfully', pendingCodingQuestions });
@@ -922,7 +922,7 @@ exports.getAllPendingMCQQuestions = async (req, res) => {
     });
 
     if (!pendingMCQQuestions.length) {
-      return res.status(404).json({ message: 'No pending MCQ questions found' });
+      return res.status(200).json({ message: 'No pending MCQ questions found' });
     }
 
     res.status(200).json({ message: 'Pending MCQ questions fetched successfully', pendingMCQQuestions });

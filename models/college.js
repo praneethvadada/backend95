@@ -21,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     logo: {
-      type: DataTypes.BLOB,
+      type: DataTypes.BLOB('long'),
       allowNull: true
     }
   }, {});
