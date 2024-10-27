@@ -1,5 +1,4 @@
-
-
+const { Op } = require('sequelize'); // To use Sequelize operators (like [Op.ne] for not equal) 
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { College } = require('../models');
@@ -91,6 +90,8 @@ const upload = multer({ storage: storage });
 //     }
 //   }
 // ];
+
+
 exports.createCollege = [
   upload.single('logo'), // Multer middleware to handle single file upload with the field name 'logo'
 
@@ -260,32 +261,174 @@ exports.getCollegeById = async (req, res) => {
 //     res.status(500).json({ message: 'Error updating college', error });
 //   }
 // };
-exports.updateCollege = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, email, password } = req.body;
-    let logo = req.file ? req.file.buffer : null; // Handle logo upload if any
+// exports.updateCollege = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { name, email, password } = req.body;
+//     let logo = req.file ? req.file.buffer : null; // Handle logo upload if any
 
-    const college = await College.findByPk(id);
-    if (!college) {
-      return res.status(404).json({ message: 'College not found' });
-    }
+//     const college = await College.findByPk(id);
+//     if (!college) {
+//       return res.status(404).json({ message: 'College not found' });
+//     }
 
-    // If the password is provided, hash it before saving
-    let updatedFields = { name, email, logo };
-    if (password) {
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
-      updatedFields.password = hashedPassword;
-    }
+//     // If the password is provided, hash it before saving
+//     let updatedFields = { name, email, logo };
+//     if (password) {
+//       const salt = await bcrypt.genSalt(10);
+//       const hashedPassword = await bcrypt.hash(password, salt);
+//       updatedFields.password = hashedPassword;
+//     }
 
-    await college.update(updatedFields);
-    res.status(200).json({ message: 'College updated successfully', college });
-  } catch (error) {
-    console.error('Error updating college:', error);
-    res.status(500).json({ message: 'Error updating college', error });
-  }
-};
+//     await college.update(updatedFields);
+//     res.status(200).json({ message: 'College updated successfully', college });
+//   } catch (error) {
+//     console.error('Error updating college:', error);
+//     res.status(500).json({ message: 'Error updating college', error });
+//   }
+// };
+
+// exports.updateCollege = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { name, email } = req.body;
+//     let logo = req.file ? req.file.buffer : null; // Handle logo upload if any
+
+//     const college = await College.findByPk(id);
+//     if (!college) {
+//       return res.status(404).json({ message: 'College not found' });
+//     }
+
+//     // If the password is provided, hash it before saving
+//     let updatedFields = { name, email, logo };
+
+
+//     await college.update(updatedFields);
+//     res.status(200).json({ message: 'College updated successfully', college });
+//   } catch (error) {
+//     console.error('Error updating college:', error);
+//     res.status(500).json({ message: 'Error updating college', error });
+//   }
+// };
+
+
+// exports.updateCollege = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { name, email } = req.body;
+//     let logo = req.file ? req.file.buffer : null; // Handle logo upload if any
+
+//     const college = await College.findByPk(id);
+//     if (!college) {
+//       return res.status(404).json({ message: 'College not found' });
+//     }
+
+//     // Prepare updated fields
+//     const updatedFields = { name, email };
+//     if (logo) {
+//       updatedFields.logo = logo; // Only include logo if provided
+//     }
+
+//     await college.update(updatedFields);
+//     res.status(200).json({ message: 'College updated successfully', college });
+//   } catch (error) {
+//     console.error('Error updating college:', error);
+//     res.status(500).json({ message: 'Error updating college', error });
+//   }
+// };
+
+// exports.updateCollege = async (req, res) => {
+//   try {
+//     // Log request body and params
+//     console.log("Received request params:", req.params);
+//     console.log("Received request body:", req.body);
+//     if (req.file) {
+//       console.log("File uploaded for update:", req.file.originalname);
+//     }
+
+//     const { id } = req.params;
+//     const { name, email } = req.body;
+//     let logo = req.file ? req.file.buffer : null; // Handle logo upload if any
+
+//     // Check if the college exists
+//     const college = await College.findByPk(id);
+//     if (!college) {
+//       console.log("College not found with ID:", id);
+//       return res.status(404).json({ message: 'College not found' });
+//     }
+
+//     // Log the current college data before updating
+//     console.log("Existing college details:", college);
+
+//     // Prepare updated fields
+//     const updatedFields = { name, email };
+//     if (logo) {
+//       updatedFields.logo = logo; // Only include logo if provided
+//       console.log("Logo included in the update");
+//     } else {
+//       console.log("No new logo provided");
+//     }
+
+//     // Log updated fields
+//     console.log("Updated fields:", updatedFields);
+
+//     // Update the college
+//     await college.update(updatedFields);
+//     console.log("College updated successfully:", college.id);
+
+//     res.status(200).json({ message: 'College updated successfully', college });
+//   } catch (error) {
+//     console.error('Error updating college:', error);
+//     res.status(500).json({ message: 'Error updating college', error });
+//   }
+// };
+
+
+
+// exports.updateCollege = [
+//   upload.single('logo'), // Handle file uploads
+//   async (req, res) => {
+//     try {
+//       const { id } = req.params;
+//       const { name, email, password } = req.body;
+
+//       const college = await College.findByPk(id);
+//       if (!college) {
+//         return res.status(404).json({ message: 'College not found' });
+//       }
+
+//       // Update fields
+//       let updatedFields = { name, email };
+
+//       // If password is provided, hash it
+//       if (password) {
+//         const salt = await bcrypt.genSalt(10);
+//         const hashedPassword = await bcrypt.hash(password, salt);
+//         updatedFields.password = hashedPassword;
+//       }
+
+//       // Handle the logo if provided
+//       if (req.file) {
+//         updatedFields.logo = req.file.buffer; // Store the file buffer in the logo field
+//       }
+
+//       // Update the college
+//       await college.update(updatedFields);
+
+//       // Convert the updated logo to Base64
+//       const updatedLogoBase64 = college.logo ? college.logo.toString('base64') : null;
+
+//       res.status(200).json({
+//         message: 'College updated successfully',
+//         college: { ...college.toJSON(), logo: updatedLogoBase64 },
+//       });
+//     } catch (error) {
+//       console.error('Error updating college:', error);
+//       res.status(500).json({ message: 'Error updating college', error });
+//     }
+//   },
+// ];
+
 
 
 exports.deleteCollege = async (req, res) => {
@@ -372,3 +515,71 @@ exports.collegeLogin = async (req, res) => {
     res.status(500).json({ message: 'Internal server error', error });
   }
 };
+
+
+
+
+
+
+exports.updateCollege = [
+  upload.single('logo'), // Handle file uploads
+  async (req, res) => {
+    try {
+      const { id } = req.params;  // Get the college ID from params
+      const { name, email, password } = req.body;  // Get the fields from request body
+
+      // Find the college by its ID
+      const college = await College.findByPk(id);
+      if (!college) {
+        return res.status(404).json({ message: 'College not found' });
+      }
+
+      // Check if the email is already in use by another college
+      if (email) {
+        const existingCollege = await College.findOne({
+          where: { email, id: { [Op.ne]: id } },  // Check if email is used by any college other than this one
+        });
+        if (existingCollege) {
+          return res.status(400).json({ message: 'This email is already in use by another college' });
+        }
+      }
+
+      // Update fields
+      let updatedFields = { name, email };
+
+      // If password is provided, hash it
+      if (password) {
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        updatedFields.password = hashedPassword;
+      }
+
+      // Handle the logo if provided
+      if (req.file) {
+        updatedFields.logo = req.file.buffer;  // Store the file buffer in the logo field
+      }
+
+      // Update the college with the new values
+      await college.update(updatedFields);
+
+      // Convert the updated logo to Base64 for returning
+      const updatedLogoBase64 = college.logo ? college.logo.toString('base64') : null;
+
+      res.status(200).json({
+        message: 'College updated successfully',
+        college: { ...college.toJSON(), logo: updatedLogoBase64 },  // Send the updated college data, including Base64 logo
+      });
+    } catch (error) {
+      // Error handling: Check for Sequelize validation errors
+      if (error.name === 'SequelizeValidationError') {
+        // Send validation errors to the client
+        const validationErrors = error.errors.map((err) => err.message);
+        return res.status(400).json({ message: 'Validation errors', errors: validationErrors });
+      }
+
+      // Handle unexpected errors
+      console.error('Error updating college:', error);
+      res.status(500).json({ message: 'Error updating college', error: error.message });
+    }
+  },
+];

@@ -6,6 +6,7 @@ const trainerRoutes = require('./routes/trainerRoutes');
 const collegeRoutes = require('./routes/collegeRoutes');
 const batchRoutes = require('./routes/batchRoutes');
 const studentRoutes = require('./routes/studentRoutes');
+const languageRoutes = require('./routes/languageRoutes');
 const cors = require('cors');
 
 app.use(cors());
@@ -18,6 +19,7 @@ app.use('/trainer', trainerRoutes);
 app.use('/colleges', collegeRoutes);
 app.use('/batches', batchRoutes);
 app.use('/students', studentRoutes);
+app.use('/languages', languageRoutes);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

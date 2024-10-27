@@ -20,6 +20,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false
     },
+    roll_no: {
+      type: DataTypes.STRING, // Assuming roll_no is a string (can be a number if required)
+      allowNull: false,       // Ensuring roll_no is not null
+      unique: true            // Ensuring roll_no is unique
+    },
     batch_id: {
       type: DataTypes.INTEGER,
       allowNull: false,

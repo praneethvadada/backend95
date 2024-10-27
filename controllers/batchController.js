@@ -69,6 +69,26 @@ exports.deleteBatch = async (req, res) => {
   }
 };
 // Fetch all batches by college_id
+// exports.getBatchesByCollegeId = async (req, res) => {
+//   try {
+//     const { college_id } = req.params;  // Get college_id from the route params
+    
+//     // Find all batches for the given college_id
+//     const batches = await Batch.findAll({
+//       where: { college_id }  // Filter by college_id
+//     });
+
+//     if (!batches.length) {
+//       return res.status(404).json({ message: 'No batches found for this college' });
+//     }
+
+//     res.status(200).json({ message: 'Batches fetched successfully', batches });
+//   } catch (error) {
+//     console.error('Error fetching batches:', error);
+//     res.status(500).json({ message: 'Error fetching batches', error });
+//   }
+// };
+
 exports.getBatchesByCollegeId = async (req, res) => {
   try {
     const { college_id } = req.params;  // Get college_id from the route params
@@ -78,8 +98,9 @@ exports.getBatchesByCollegeId = async (req, res) => {
       where: { college_id }  // Filter by college_id
     });
 
-    if (!batches.length) {
-      return res.status(404).json({ message: 'No batches found for this college' });
+    // Return an empty array if no batches found, instead of throwing an error
+    if (batches.length === 0) {
+      return res.status(200).json({ message: 'No batches found for this college', batches: [] });
     }
 
     res.status(200).json({ message: 'Batches fetched successfully', batches });
