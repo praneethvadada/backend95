@@ -2,7 +2,8 @@
 const {AssessmentQuestion , MCQDomain, CodingQuestionDomain, Admin, AllowedLanguage,Trainer  } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { AssessmentRound, Assessment, CodingQuestion, PracticeQuestion, MCQQuestion, Batch} = require('../models');
+// const { CodingQuestion,  } = require('../models');
+const { AssessmentRound, Assessment, CodingQuestion, PracticeQuestion, MCQQuestion, StudentSubmission, Batch} = require('../models');
 
 // Setup multer for file uploads
 const storage = multer.memoryStorage();  // Storing file in memory as a buffer
@@ -1861,41 +1862,177 @@ exports.getMCQQuestionsByDomain = async (req, res) => {
 
 
 
+// exports.getCodingQuestionsByDomain = async (req, res) => {
+//   try {
+//     const { domain_id } = req.params;
+
+//     // Fetch all Coding questions that belong to the specified domain
+//     const codingQuestions = await CodingQuestion.findAll({
+//       where: { codingquestiondomain_id: domain_id,approval_status: 'approved',question_type: 'practice' },
+//       attributes: [
+//         'id', 'title', 'description', 'input_format', 'output_format',
+//         'test_cases', 'constraints', 'difficulty', 'allowed_languages', 'solutions'
+//       ]
+//     });
+
+//     // Check if the result is null or an empty array
+//     if (codingQuestions === null) {
+//       // This would indicate something went wrong (e.g., invalid query)
+//       return res.status(500).json({ message: 'Error fetching coding questions for this domain' });
+//     } else if (codingQuestions.length === 0) {
+//       // This means the query was successful but no questions were found
+//       return res.status(204).json({ message: 'No coding questions found for this domain', codingQuestions: [] });
+//     }
+
+//     // Log each question's solutions for debugging if needed
+//     codingQuestions.forEach((question) => {
+//       if (!question.solutions || question.solutions.length === 0) {
+//         console.log(`Question ID ${question.id} has no solutions or is empty.`);
+//       } else {
+//         console.log(`Question ID ${question.id} solutions:`, question.solutions);
+//       }
+//     });
+
+//     // Return the found coding questions
+//     res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions });
+//   } catch (error) {
+//     console.error('Error fetching Coding Questions:', error);
+//     res.status(500).json({ message: 'Error fetching Coding Questions', error });
+//   }
+// };
+
+
+// controllers/studentController.js
+// const { CodingQuestion, StudentSubmission } = require('../models');
+
+
+
+// exports.getCodingQuestionsByDomain = async (req, res) => {
+//     try {
+//         const { domain_id } = req.params;
+//         const { student_id } = req.query;
+
+//         // Fetch all Coding questions that belong to the specified domain
+//         const codingQuestions = await CodingQuestion.findAll({
+//             where: { codingquestiondomain_id: domain_id, approval_status: 'approved', question_type: 'practice' },
+//             attributes: [
+//                 'id', 'title', 'description', 'input_format', 'output_format',
+//                 'test_cases', 'constraints', 'difficulty', 'allowed_languages', 'solutions'
+//             ]
+//         });
+
+//         if (!codingQuestions || codingQuestions.length === 0) {
+//             return res.status(204).json({ message: 'No coding questions found for this domain', codingQuestions: [] });
+//         }
+
+//         // Fetch student's submission details for each question in the specified domain
+//         const questionIds = codingQuestions.map(q => q.id);
+//         const studentSubmissions = await StudentSubmission.findAll({
+//             where: {
+//                 student_id: student_id,
+//                 domain_id: domain_id,
+//                 question_id: questionIds
+//             },
+//             attributes: ['question_id', 'score', 'status', 'language', 'solution_code', 'question_points', 'is_reported', 'report_text']
+//         });
+
+//         // Organize submissions by question ID for easy lookup
+//         const submissionMap = studentSubmissions.reduce((acc, submission) => {
+//             acc[submission.question_id] = submission;
+//             return acc;
+//         }, {});
+
+//         // Add submission details to each question object
+//         const responseQuestions = codingQuestions.map(question => ({
+//             id: question.id,
+//             title: question.title,
+//             description: question.description,
+//             input_format: question.input_format,
+//             output_format: question.output_format,
+//             test_cases: question.test_cases,
+//             constraints: question.constraints,
+//             difficulty: question.difficulty,
+//             allowed_languages: question.allowed_languages,
+//             solutions: question.solutions,
+//             // Additional fields from StudentSubmission
+//             score: submissionMap[question.id]?.score || null,
+//             status: submissionMap[question.id]?.status || 'not_attempted',
+//             language: submissionMap[question.id]?.language || null,
+//             solution_code: submissionMap[question.id]?.solution_code || null,
+//             question_points: submissionMap[question.id]?.question_points || null,
+//             is_reported: submissionMap[question.id]?.is_reported || false,
+//             report_text: submissionMap[question.id]?.report_text || null
+//         }));
+
+//         // Return the found coding questions with submission details
+//         res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions: responseQuestions });
+//     } catch (error) {
+//         console.error('Error fetching Coding Questions:', error);
+//         res.status(500).json({ message: 'Error fetching Coding Questions', error });
+//     }
+// };
+
 exports.getCodingQuestionsByDomain = async (req, res) => {
   try {
-    const { domain_id } = req.params;
+      const { domain_id } = req.params;
+      const student_id = req.user.id; // Extracted from JWT token
 
-    // Fetch all Coding questions that belong to the specified domain
-    const codingQuestions = await CodingQuestion.findAll({
-      where: { codingquestiondomain_id: domain_id,approval_status: 'approved',question_type: 'practice' },
-      attributes: [
-        'id', 'title', 'description', 'input_format', 'output_format',
-        'test_cases', 'constraints', 'difficulty', 'allowed_languages', 'solutions'
-      ]
-    });
+      // Fetch all Coding questions that belong to the specified domain
+      const codingQuestions = await CodingQuestion.findAll({
+          where: { codingquestiondomain_id: domain_id, approval_status: 'approved', question_type: 'practice' },
+          attributes: [
+              'id', 'title', 'description', 'input_format', 'output_format',
+              'test_cases', 'constraints', 'difficulty', 'allowed_languages', 'solutions'
+          ]
+      });
 
-    // Check if the result is null or an empty array
-    if (codingQuestions === null) {
-      // This would indicate something went wrong (e.g., invalid query)
-      return res.status(500).json({ message: 'Error fetching coding questions for this domain' });
-    } else if (codingQuestions.length === 0) {
-      // This means the query was successful but no questions were found
-      return res.status(204).json({ message: 'No coding questions found for this domain', codingQuestions: [] });
-    }
-
-    // Log each question's solutions for debugging if needed
-    codingQuestions.forEach((question) => {
-      if (!question.solutions || question.solutions.length === 0) {
-        console.log(`Question ID ${question.id} has no solutions or is empty.`);
-      } else {
-        console.log(`Question ID ${question.id} solutions:`, question.solutions);
+      if (!codingQuestions || codingQuestions.length === 0) {
+          return res.status(204).json({ message: 'No coding questions found for this domain', codingQuestions: [] });
       }
-    });
 
-    // Return the found coding questions
-    res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions });
+      // Fetch student's submission details for each question in the specified domain
+      const questionIds = codingQuestions.map(q => q.id);
+      const studentSubmissions = await StudentSubmission.findAll({
+          where: {
+              student_id: student_id,
+              domain_id: domain_id,
+              question_id: questionIds
+          },
+          attributes: ['question_id', 'score', 'status', 'language', 'solution_code', 'question_points', 'is_reported', 'report_text']
+      });
+
+      // Organize submissions by question ID for easy lookup
+      const submissionMap = studentSubmissions.reduce((acc, submission) => {
+          acc[submission.question_id] = submission;
+          return acc;
+      }, {});
+
+      // Add submission details to each question object
+      const responseQuestions = codingQuestions.map(question => ({
+          id: question.id,
+          title: question.title,
+          description: question.description,
+          input_format: question.input_format,
+          output_format: question.output_format,
+          test_cases: question.test_cases,
+          constraints: question.constraints,
+          difficulty: question.difficulty,
+          allowed_languages: question.allowed_languages,
+          solutions: question.solutions,
+          // Additional fields from StudentSubmission
+          score: submissionMap[question.id]?.score || null,
+          status: submissionMap[question.id]?.status || 'not_attempted',
+          language: submissionMap[question.id]?.language || null,
+          solution_code: submissionMap[question.id]?.solution_code || null,
+          question_points: submissionMap[question.id]?.question_points || null,
+          is_reported: submissionMap[question.id]?.is_reported || false,
+          report_text: submissionMap[question.id]?.report_text || null
+      }));
+
+      // Return the found coding questions with submission details
+      res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions: responseQuestions });
   } catch (error) {
-    console.error('Error fetching Coding Questions:', error);
-    res.status(500).json({ message: 'Error fetching Coding Questions', error });
+      console.error('Error fetching Coding Questions:', error);
+      res.status(500).json({ message: 'Error fetching Coding Questions', error });
   }
 };

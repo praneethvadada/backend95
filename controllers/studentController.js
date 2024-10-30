@@ -1,6 +1,7 @@
+const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { BatchPracticeQuestion, CodingQuestion, MCQQuestion, Student, Batch, College} = require('../models');
+const { StudentSubmission, BatchPracticeQuestion, CodingQuestion, MCQQuestion, Student, Batch, College} = require('../models');
 const db = require('../models');
 const { Op } = require('sequelize');
 
@@ -752,3 +753,98 @@ exports.getCodingQuestionsByDomainForStudents = async (req, res) => {
 //   }
 // };
 
+
+
+// const axios = require('axios');
+// const { StudentSubmission } = require('../models'); // Adjust to your model import path
+
+exports.submitCode = async (req, res) => {
+    try {
+        // Extract student ID from JWT
+        const studentId = req.user.id;
+
+        // Extract required data from the request body
+        const { domain_id, question_id, language, code, testcases } = req.body;
+
+        // Determine the Docker endpoint based on the language
+        let endpoint;
+        switch (language.toLowerCase()) {
+            case 'python':
+                endpoint = 'http://localhost:8084/compile';
+                break;
+            case 'java':
+                endpoint = 'http://localhost:8083/compile';
+                break;
+            case 'cpp':
+                endpoint = 'http://localhost:8081/compile';
+                break;
+            case 'c':
+                endpoint = 'http://localhost:8082/compile';
+                break;
+            default:
+                return res.status(400).json({ message: "Unsupported language selected" });
+        }
+
+        // Prepare request payload for Docker API
+        const requestBody = {
+            language,
+            code,
+            testcases
+        };
+
+        // Send request to Docker container
+        const response = await axios.post(endpoint, requestBody, {
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        // Docker response contains an array of test case results
+        const testResults = response.data;
+
+        // Analyze test case results to calculate status and score
+        let passedTests = 0;
+        let totalTests = testResults.length;
+
+        testResults.forEach(result => {
+            if (result.success) {
+                passedTests += 1;
+            }
+        });
+
+        // Calculate score and determine status
+        const score = Math.round((passedTests / totalTests) * 100);
+        let status;
+        if (score === 100) {
+            status = 'pass';
+        } else if (score === 0) {
+            status = 'fail';
+        } else {
+            status = 'partial';
+        }
+
+        // Store the submission data in Student_Submissions table
+        const submission = await StudentSubmission.create({
+            student_id: studentId,
+            domain_id,
+            question_id,
+            score,
+            solution_code: code,
+            status,
+            question_points: 100, // Example points, adjust based on your grading logic
+            language,
+            submitted_at: new Date(),
+            last_updated: new Date()
+        });
+
+        // Send response to the frontend
+        res.status(201).json({
+            message: 'Code submitted successfully',
+            submission,
+            testResults,
+            calculatedScore: `${score}%`,
+            finalStatus: status
+        });
+    } catch (error) {
+        console.error("Error submitting code:", error);
+        res.status(500).json({ message: 'Error submitting code', error: error.message });
+    }
+};
