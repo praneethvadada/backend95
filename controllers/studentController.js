@@ -624,7 +624,8 @@ exports.getCodingQuestionsByDomainForStudents = async (req, res) => {
         'test_cases',
         'constraints',
         'difficulty',
-        'allowed_languages'
+        'allowed_languages',
+        'solutions'
       ]
     });
 

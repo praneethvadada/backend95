@@ -1821,20 +1821,69 @@ exports.getMCQQuestionsByDomain = async (req, res) => {
 // };
 
 
+// exports.getCodingQuestionsByDomain = async (req, res) => {
+//   try {
+//     const { domain_id } = req.params;
+
+//     // Fetch all Coding questions that belong to the specified domain
+//     const codingQuestions = await CodingQuestion.findAll({
+//       where: { codingquestiondomain_id: domain_id },
+//       attributes: [
+//         'id', 'title', 'description', 'input_format', 'output_format',
+//         'test_cases', 'constraints', 'difficulty', 'allowed_languages', 'solutions'
+//       ]
+//     });
+
+//     // Log each question's solutions and debug if missing
+//     codingQuestions.forEach((question) => {
+//       if (!question.solutions || question.solutions.length === 0) {
+//         console.log(`Question ID ${question.id} has no solutions or is empty.`);
+//       } else {
+//         console.log(`Question ID ${question.id} solutions:`, question.solutions);
+//       }
+//     });
+
+//     codingQuestions.forEach((question) => {
+//       if (!question.solutions || question.solutions.length === 0) {
+//         console.log(`Question ID ${question.id} has no solutions or is empty.`);
+//       } else {
+//         console.log(`Question ID ${question.id} solutions:`, question.solutions);
+//       }
+//     });
+
+
+//     res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions });
+//   } catch (error) {
+//     console.error('Error fetching Coding Questions:', error);
+//     res.status(500).json({ message: 'Error fetching Coding Questions', error });
+//   }
+// }
+
+
+
 exports.getCodingQuestionsByDomain = async (req, res) => {
   try {
     const { domain_id } = req.params;
 
     // Fetch all Coding questions that belong to the specified domain
     const codingQuestions = await CodingQuestion.findAll({
-      where: { codingquestiondomain_id: domain_id },
+      where: { codingquestiondomain_id: domain_id,approval_status: 'approved',question_type: 'practice' },
       attributes: [
         'id', 'title', 'description', 'input_format', 'output_format',
         'test_cases', 'constraints', 'difficulty', 'allowed_languages', 'solutions'
       ]
     });
 
-    // Log each question's solutions and debug if missing
+    // Check if the result is null or an empty array
+    if (codingQuestions === null) {
+      // This would indicate something went wrong (e.g., invalid query)
+      return res.status(500).json({ message: 'Error fetching coding questions for this domain' });
+    } else if (codingQuestions.length === 0) {
+      // This means the query was successful but no questions were found
+      return res.status(204).json({ message: 'No coding questions found for this domain', codingQuestions: [] });
+    }
+
+    // Log each question's solutions for debugging if needed
     codingQuestions.forEach((question) => {
       if (!question.solutions || question.solutions.length === 0) {
         console.log(`Question ID ${question.id} has no solutions or is empty.`);
@@ -1843,13 +1892,10 @@ exports.getCodingQuestionsByDomain = async (req, res) => {
       }
     });
 
-    if (!codingQuestions || codingQuestions.length === 0) {
-      return res.status(404).json({ message: 'No Coding Questions found for this domain' });
-    }
-
+    // Return the found coding questions
     res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions });
   } catch (error) {
     console.error('Error fetching Coding Questions:', error);
     res.status(500).json({ message: 'Error fetching Coding Questions', error });
   }
-}
+};

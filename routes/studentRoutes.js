@@ -40,11 +40,11 @@ router.get('/search-all-students', studentController.searchAllStudents);
 router.get('/mcq-domains',verifyStudent , adminController.getAllMCQDomains);
 router.get('/coding-domains',verifyStudent, adminController.getAllCodingDomains);
 
-router.get('/mcq-questions/domain/:domain_id', verifyStudent, studentController.getMCQQuestionsByDomainForStudents);
-router.get('/coding-questions/domains/:domain_id',verifyStudent, studentController.getCodingQuestionsByDomainForStudents);
+// router.get('/mcq-questions/domain/:domain_id', verifyStudent, studentController.getMCQQuestionsByDomainForStudents);
+// router.get('/get-coding-questions/domains/:domain_id',verifyStudent, studentController.getCodingQuestionsByDomainForStudents);
 
 
 router.get('/mcq-questions/domain/:domain_id',verifyStudent,  adminController.getMCQQuestionsByDomain);
 router.get('/coding-questions/domain/:domain_id',verifyStudent, adminController.getCodingQuestionsByDomain);
-
+//adminController.getCodingQuestionsByDomain
 module.exports = router;
