@@ -1,7 +1,7 @@
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { StudentSubmission, BatchPracticeQuestion, CodingQuestion, MCQQuestion, Student, Batch, College} = require('../models');
+const {StudentMcqAnswer , StudentSubmission, BatchPracticeQuestion, CodingQuestion, MCQQuestion, Student, Batch, College} = require('../models');
 const db = require('../models');
 const { Op } = require('sequelize');
 
@@ -758,93 +758,259 @@ exports.getCodingQuestionsByDomainForStudents = async (req, res) => {
 // const axios = require('axios');
 // const { StudentSubmission } = require('../models'); // Adjust to your model import path
 
+// exports.submitCode = async (req, res) => {
+//     try {
+//         // Extract student ID from JWT
+//         const studentId = req.user.id;
+
+//         // Extract required data from the request body
+//         const { domain_id, question_id, language, code, testcases } = req.body;
+
+//         // Determine the Docker endpoint based on the language
+//         let endpoint;
+//         switch (language.toLowerCase()) {
+//             case 'python':
+//                 endpoint = 'http://localhost:8084/compile';
+//                 break;
+//             case 'java':
+//                 endpoint = 'http://localhost:8083/compile';
+//                 break;
+//             case 'cpp':
+//                 endpoint = 'http://localhost:8081/compile';
+//                 break;
+//             case 'c':
+//                 endpoint = 'http://localhost:8082/compile';
+//                 break;
+//             default:
+//                 return res.status(400).json({ message: "Unsupported language selected" });
+//         }
+
+//         // Prepare request payload for Docker API
+//         const requestBody = {
+//             language,
+//             code,
+//             testcases
+//         };
+
+//         // Send request to Docker container
+//         const response = await axios.post(endpoint, requestBody, {
+//             headers: { 'Content-Type': 'application/json' }
+//         });
+
+//         // Docker response contains an array of test case results
+//         const testResults = response.data;
+
+//         // Analyze test case results to calculate status and score
+//         let passedTests = 0;
+//         let totalTests = testResults.length;
+
+//         testResults.forEach(result => {
+//             if (result.success) {
+//                 passedTests += 1;
+//             }
+//         });
+
+//         // Calculate score and determine status
+//         const score = Math.round((passedTests / totalTests) * 100);
+//         let status;
+//         if (score === 100) {
+//             status = 'pass';
+//         } else if (score === 0) {
+//             status = 'fail';
+//         } else {
+//             status = 'partial';
+//         }
+
+//         // Store the submission data in Student_Submissions table
+//         const submission = await StudentSubmission.create({
+//             student_id: studentId,
+//             domain_id,
+//             question_id,
+//             score,
+//             solution_code: code,
+//             status,
+//             question_points: 100, // Example points, adjust based on your grading logic
+//             language,
+//             submitted_at: new Date(),
+//             last_updated: new Date()
+//         });
+
+//         // Send response to the frontend
+//         res.status(201).json({
+//             message: 'Code submitted successfully',
+//             submission,
+//             testResults,
+//             calculatedScore: `${score}%`,
+//             finalStatus: status
+//         });
+//     } catch (error) {
+//         console.error("Error submitting code:", error);
+//         res.status(500).json({ message: 'Error submitting code', error: error.message });
+//     }
+// };
+
 exports.submitCode = async (req, res) => {
-    try {
-        // Extract student ID from JWT
-        const studentId = req.user.id;
+  try {
+      const studentId = req.user.id;
+      const { domain_id, question_id, language, code, testcases, action } = req.body;
 
-        // Extract required data from the request body
-        const { domain_id, question_id, language, code, testcases } = req.body;
+      // Determine Docker endpoint based on language
+      let endpoint;
+      switch (language.toLowerCase()) {
+          case 'python': endpoint = 'http://localhost:8084/compile'; break;
+          case 'java': endpoint = 'http://localhost:8083/compile'; break;
+          case 'cpp': endpoint = 'http://localhost:8081/compile'; break;
+          case 'c': endpoint = 'http://localhost:8082/compile'; break;
+          default: return res.status(400).json({ message: "Unsupported language selected" });
+      }
 
-        // Determine the Docker endpoint based on the language
-        let endpoint;
-        switch (language.toLowerCase()) {
-            case 'python':
-                endpoint = 'http://localhost:8084/compile';
-                break;
-            case 'java':
-                endpoint = 'http://localhost:8083/compile';
-                break;
-            case 'cpp':
-                endpoint = 'http://localhost:8081/compile';
-                break;
-            case 'c':
-                endpoint = 'http://localhost:8082/compile';
-                break;
-            default:
-                return res.status(400).json({ message: "Unsupported language selected" });
-        }
+      if (action === "submit") {
+          const response = await axios.post(endpoint, { language, code, testcases }, { headers: { 'Content-Type': 'application/json' } });
+          const testResults = response.data;
 
-        // Prepare request payload for Docker API
-        const requestBody = {
-            language,
-            code,
-            testcases
-        };
+          let passedTests = 0;
+          const totalTests = testResults.length;
+          testResults.forEach(result => { if (result.success) passedTests += 1; });
 
-        // Send request to Docker container
-        const response = await axios.post(endpoint, requestBody, {
-            headers: { 'Content-Type': 'application/json' }
-        });
+          const score = Math.round((passedTests / totalTests) * 100);
+          const status = score === 100 ? 'pass' : score === 0 ? 'fail' : 'partial';
 
-        // Docker response contains an array of test case results
-        const testResults = response.data;
+          const submission = await StudentSubmission.create({
+              student_id: studentId,
+              domain_id,
+              question_id,
+              score,
+              solution_code: code,
+              status,
+              question_points: 0,
+              language,
+              submitted_at: new Date(),
+              last_updated: new Date()
+          });
 
-        // Analyze test case results to calculate status and score
-        let passedTests = 0;
-        let totalTests = testResults.length;
+          return res.status(201).json({
+              message: 'Code submitted successfully',
+              submission,
+              testResults,
+              calculatedScore: `${score}%`,
+              finalStatus: status
+          });
+      } else {
+          await StudentSubmission.upsert({
+              student_id: studentId,
+              domain_id,
+              question_id,
+              solution_code: code,
+              status: "draft",
+              last_updated: new Date()
+          });
 
-        testResults.forEach(result => {
-            if (result.success) {
-                passedTests += 1;
-            }
-        });
+          return res.status(200).json({ message: 'Draft saved successfully' });
+      }
+  } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ message: 'Error submitting or saving code', error: error.message });
+  }
+};
 
-        // Calculate score and determine status
-        const score = Math.round((passedTests / totalTests) * 100);
-        let status;
-        if (score === 100) {
-            status = 'pass';
-        } else if (score === 0) {
-            status = 'fail';
-        } else {
-            status = 'partial';
-        }
 
-        // Store the submission data in Student_Submissions table
-        const submission = await StudentSubmission.create({
-            student_id: studentId,
-            domain_id,
-            question_id,
-            score,
-            solution_code: code,
-            status,
-            question_points: 100, // Example points, adjust based on your grading logic
-            language,
-            submitted_at: new Date(),
-            last_updated: new Date()
-        });
 
-        // Send response to the frontend
-        res.status(201).json({
-            message: 'Code submitted successfully',
-            submission,
-            testResults,
-            calculatedScore: `${score}%`,
-            finalStatus: status
-        });
-    } catch (error) {
-        console.error("Error submitting code:", error);
-        res.status(500).json({ message: 'Error submitting code', error: error.message });
+exports.submitAnswer = async (req, res) => {
+  try {
+    const { student_id, domain_id, question_id, submitted_options, points } = req.body;
+
+    // Check if the answer already exists
+    let answer = await StudentMcqAnswer.findOne({
+      where: { student_id, domain_id, question_id }
+    });
+
+    if (answer) {
+      // Update existing answer
+      await answer.update({
+        submitted_options,
+        is_attempted: true,
+        points
+      });
+    } else {
+      // Create new answer
+      answer = await StudentMcqAnswer.create({
+        student_id,
+        domain_id,
+        question_id,
+        submitted_options,
+        is_attempted: true,
+        points
+      });
     }
+
+    res.status(200).json({ message: 'Answer submitted successfully', answer });
+  } catch (error) {
+    console.error('Error submitting answer:', error);
+    res.status(500).json({ message: 'Error submitting answer', error });
+  }
+};
+
+
+exports.toggleMarkQuestion = async (req, res) => {
+  try {
+    const { student_id, domain_id, question_id, marked } = req.body;
+
+    // Check if the answer already exists
+    let answer = await StudentMcqAnswer.findOne({
+      where: { student_id, domain_id, question_id }
+    });
+
+    if (answer) {
+      // Update marked status for the existing answer
+      await answer.update({
+        marked
+      });
+    } else {
+      // Create new answer with marked status
+      answer = await StudentMcqAnswer.create({
+        student_id,
+        domain_id,
+        question_id,
+        marked
+      });
+    }
+
+    res.status(200).json({ message: 'Marked status updated successfully', answer });
+  } catch (error) {
+    console.error('Error updating marked status:', error);
+    res.status(500).json({ message: 'Error updating marked status', error });
+  }
+};
+
+exports.reportQuestion = async (req, res) => {
+  try {
+    const { student_id, domain_id, question_id, reported_text } = req.body;
+
+    // Check if the answer already exists
+    let answer = await StudentMcqAnswer.findOne({
+      where: { student_id, domain_id, question_id }
+    });
+
+    if (answer) {
+      // Update reported status for the existing answer
+      await answer.update({
+        is_reported: true,
+        reported_text
+      });
+    } else {
+      // Create new answer with reported status
+      answer = await StudentMcqAnswer.create({
+        student_id,
+        domain_id,
+        question_id,
+        is_reported: true,
+        reported_text
+      });
+    }
+
+    res.status(200).json({ message: 'Question reported successfully', answer });
+  } catch (error) {
+    console.error('Error reporting question:', error);
+    res.status(500).json({ message: 'Error reporting question', error });
+  }
 };

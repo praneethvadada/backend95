@@ -50,5 +50,7 @@ router.get('/coding-questions/domain/:domain_id',verifyStudent, adminController.
 
 router.post('/practice-coding-question-submit',verifyStudent, studentController.submitCode);
 
-
+router.post('/submit-answer', studentController.submitAnswer);
+router.post('/mark-question', studentController.toggleMarkQuestion);
+router.post('/report-question', studentController.reportQuestion);
 module.exports = router;

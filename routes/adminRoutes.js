@@ -59,11 +59,15 @@ router.delete('/delete-coding-domain/:id', verifyAdmin, adminController.deleteCo
 
 router.post('/create-assessment', verifyAdmin, adminController.createAssessment);
 router.get('/assessments', verifyAdmin, adminController.getAllAssessments);
+router.put('/edit-assessment/:assessment_id', verifyAdmin, adminController.editAssessment);
+router.delete('/delete-assessment/:assessment_id', verifyAdmin, adminController.deleteAssessment );
+
+
 
 router.post('/assessment-rounds', verifyAdmin, adminController.createAssessmentRound);
-router.get('/assessment-rounds/:assessment_id', verifyAdmin, adminController.getRoundsByAssessmentId);
-router.put('/assessment-rounds/:round_id', verifyAdmin, adminController.updateAssessmentRound);
-router.delete('/assessment-rounds/:round_id', verifyAdmin, adminController.deleteAssessmentRound);
+// router.get('/assessment-rounds/:assessment_id', verifyAdmin, adminController.getRoundsByAssessmentId);
+router.put('/edit-assessment-rounds/:round_id', verifyAdmin, adminController.updateAssessmentRound);
+router.delete('/delete-assessment-rounds/:round_id', verifyAdmin, adminController.deleteAssessmentRound);
 
 router.get('/assessment-rounds/round-ids/:assessment_id', verifyAdmin, adminController.getRoundIdsByAssessmentId);
 router.put('/update-all-round-orders/:assessment_id', verifyAdmin, adminController.updateAllRoundOrders);

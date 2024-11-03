@@ -126,5 +126,5 @@ module.exports = {
   verifyAdmin,
   verifyTrainer,
   verifyCollege,
-  verifyStudent
+  verifyStudent,
 };

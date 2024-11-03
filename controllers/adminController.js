@@ -1,5 +1,5 @@
 ﻿const multer = require('multer');
-const {AssessmentQuestion , MCQDomain, CodingQuestionDomain, Admin, AllowedLanguage,Trainer  } = require('../models');
+const {AssessmentQuestion , MCQDomain, CodingQuestionDomain, Admin, AllowedLanguage,Trainer,StudentMcqAnswer   } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 // const { CodingQuestion,  } = require('../models');
@@ -1282,6 +1282,64 @@ exports.createAssessment = async (req, res) => {
 };
 
 
+// Controller to edit an existing assessment
+exports.editAssessment = async (req, res) => {
+  const { assessment_id } = req.params; // Assessment ID from URL params
+  const { title, description, start_window, end_window, duration_minutes, is_active } = req.body;
+
+  try {
+    // Check if the assessment exists
+    const assessment = await Assessment.findByPk(assessment_id);
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    // Update the assessment fields
+    assessment.title = title || assessment.title;
+    assessment.description = description || assessment.description;
+    assessment.start_window = start_window || assessment.start_window;
+    assessment.end_window = end_window || assessment.end_window;
+    assessment.duration_minutes = duration_minutes || assessment.duration_minutes;
+    assessment.is_active = is_active !== undefined ? is_active : assessment.is_active;
+
+    // Save the updated assessment
+    await assessment.save();
+
+    res.status(200).json({
+      message: 'Assessment updated successfully',
+      assessment
+    });
+  } catch (error) {
+    console.error('Error updating assessment:', error);
+    res.status(500).json({
+      message: 'Error updating assessment',
+      error
+    });
+  }
+};
+// Controller to delete an assessment
+exports.deleteAssessment = async (req, res) => {
+  const { assessment_id } = req.params; // Assessment ID from URL params
+
+  try {
+    // Check if the assessment exists
+    const assessment = await Assessment.findByPk(assessment_id);
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    // Delete the assessment
+    await assessment.destroy();
+
+    res.status(200).json({ message: 'Assessment deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting assessment:', error);
+    res.status(500).json({
+      message: 'Error deleting assessment',
+      error
+    });
+  }
+};
 
 
 // Controller to create an assessment round
@@ -1380,33 +1438,23 @@ exports.getRoundsByAssessmentId = async (req, res) => {
   }
 };
 
-// Controller to update an assessment round
 exports.updateAssessmentRound = async (req, res) => {
+  const { round_id } = req.params;
+  const { round_type } = req.body;
+  console.log(`Editing round ID: ${round_id} with data:`, req.body);  // Debug
   try {
-    const { round_id } = req.params;
-    const { round_type, round_order } = req.body;
-
-    // Find the assessment round by ID
-    const assessmentRound = await AssessmentRound.findByPk(round_id);
-    if (!assessmentRound) {
-      return res.status(404).json({ message: 'Assessment round not found' });
-    }
-
-    // Update the round details
-    await assessmentRound.update({
-      round_type,
-      round_order
-    });
-
-    res.status(200).json({
-      message: 'Assessment round updated successfully',
-      assessmentRound
-    });
+    const round = await AssessmentRound.update(
+      { round_type },
+      { where: { id: round_id } }
+    );
+    console.log('Round updated:', round);  // Debug
+    res.status(200).json({ message: 'Round updated successfully', round });
   } catch (error) {
-    console.error('Error updating assessment round:', error);
-    res.status(500).json({ message: 'Error updating assessment round', error });
+    console.error('Error updating round:', error);  // Debug
+    res.status(500).json({ message: 'Error updating round', error });
   }
 };
+
 
 // Controller to delete an assessment round
 exports.deleteAssessmentRound = async (req, res) => {
@@ -1488,9 +1536,6 @@ exports.updateAllRoundOrders = async (req, res) => {
   }
 };
 
-
-
-// Controller to fetch round IDs and round orders for a specific assessment
 exports.getRoundIdsByAssessmentId = async (req, res) => {
   try {
     const { assessment_id } = req.params; // Get assessment_id from the request params
@@ -1503,7 +1548,11 @@ exports.getRoundIdsByAssessmentId = async (req, res) => {
     });
 
     if (!assessmentRounds.length) {
-      return res.status(404).json({ message: 'No rounds found for this assessment' });
+      // Return 200 status with a clear message if no rounds found
+      return res.status(200).json({
+        message: 'No rounds found for this assessment',
+        rounds: []
+      });
     }
 
     res.status(200).json({
@@ -1712,27 +1761,147 @@ exports.getAllAssessments = async (req, res) => {
 //     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
 //   }
 // };
-exports.getMCQQuestionsByDomain = async (req, res) => {
-  try {
-    const { domain_id } = req.params;
 
-    // Fetch all MCQ questions that belong to the specified domain
-    const mcqQuestions = await MCQQuestion.findAll({
-      where: { mcqdomain_id: domain_id },
-    });
 
-    // If no questions are found, respond with an empty array
-    if (!mcqQuestions) {
-      return res.status(200).json({ message: 'No MCQ Questions found for this domain', mcqQuestions: [] });
-    }
+// exports.getMCQQuestionsByDomain = async (req, res) => {
+//   try {
+//     const { domain_id } = req.params;
 
-    res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions });
-  } catch (error) {
-    console.error('Error fetching MCQ Questions:', error);
-    res.status(500).json({ message: 'Error fetching MCQ Questions', error });
-  }
-};
+//     // Fetch all MCQ questions that belong to the specified domain
+//     const mcqQuestions = await MCQQuestion.findAll({
+//       where: { mcqdomain_id: domain_id },
+//     });
 
+//     // If no questions are found, respond with an empty array
+//     if (!mcqQuestions) {
+//       return res.status(200).json({ message: 'No MCQ Questions found for this domain', mcqQuestions: [] });
+//     }
+
+//     res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions });
+//   } catch (error) {
+//     console.error('Error fetching MCQ Questions:', error);
+//     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
+//   }
+// };
+
+
+// exports.getMCQQuestionsByDomain = async (req, res) => {
+//   try {
+//     const { domain_id } = req.params;
+//     const { student_id } = req.query; // assuming student_id is passed as a query parameter
+
+//     // Fetch all MCQ questions that belong to the specified domain
+//     const mcqQuestions = await MCQQuestion.findAll({
+//       where: { mcqdomain_id: domain_id },
+//       attributes: [
+//         'id', 'title', 'options', 'correct_answers', 'is_single_answer',
+//         'mcqdomain_id', 'code_snippets', 'question_type', 'approval_status',
+//         'created_by', 'difficulty', 'round_id', 'createdAt', 'updatedAt'
+//       ],
+//       raw: true // Fetches plain data objects for easy manipulation
+//     });
+
+//     // Fetch StudentMcqAnswer data for each question for the specified student
+//     const studentAnswers = await StudentMcqAnswer.findAll({
+//       where: { student_id: student_id, domain_id: domain_id },
+//       attributes: [
+//         'question_id', 'submitted_options', 'is_attempted', 'points', 
+//         'marked', 'is_reported', 'reported_text'
+//       ],
+//       raw: true
+//     });
+
+//     // Map student answers to their respective question IDs for easy lookup
+//     const studentAnswersMap = studentAnswers.reduce((map, answer) => {
+//       map[answer.question_id] = answer;
+//       return map;
+//     }, {});
+
+//     // Combine MCQ question data with StudentMcqAnswer data
+//     const combinedData = mcqQuestions.map((question) => {
+//       // Find if there is a corresponding student answer for the question
+//       const studentAnswer = studentAnswersMap[question.id] || {};
+
+//       return {
+//         ...question,
+//         submitted_options: studentAnswer.submitted_options || null,
+//         is_attempted: studentAnswer.is_attempted || false,
+//         points: studentAnswer.points || 0,
+//         marked: studentAnswer.marked || false,
+//         is_reported: studentAnswer.is_reported || false,
+//         reported_text: studentAnswer.reported_text || null,
+//       };
+//     });
+
+//     res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions: combinedData });
+//   } catch (error) {
+//     console.error('Error fetching MCQ Questions:', error);
+//     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
+//   }
+// };
+
+
+// exports.getMCQQuestionsByDomain = async (req, res) => {
+//   try {
+//     const { domain_id } = req.params;
+//     const { student_id } = req.query; // assuming student_id is passed as a query parameter
+
+//     // Fetch all MCQ questions for the specified domain
+//     const mcqQuestions = await MCQQuestion.findAll({
+//       where: { mcqdomain_id: domain_id },
+//       attributes: [
+//         'id', 'title', 'options', 'correct_answers', 'is_single_answer',
+//         'mcqdomain_id', 'code_snippets', 'question_type', 'approval_status',
+//         'created_by', 'difficulty', 'round_id', 'createdAt', 'updatedAt'
+//       ],
+//       raw: true // Fetches plain data objects for easy manipulation
+//     });
+
+//     // Fetch StudentMcqAnswer data for the specified student and domain
+//     const studentAnswers = await StudentMcqAnswer.findAll({
+//       where: { student_id: student_id, domain_id: domain_id },
+//       attributes: [
+//         'question_id', 'submitted_options', 'is_attempted', 'points', 
+//         'marked', 'is_reported', 'reported_text'
+//       ],
+//       raw: true
+//     });
+
+//     // Map student answers to their respective question IDs for quick lookup
+//     const studentAnswersMap = studentAnswers.reduce((map, answer) => {
+//       map[answer.question_id] = answer;
+//       return map;
+//     }, {});
+
+//     // Combine MCQ question data with StudentMcqAnswer data and default values where missing
+//     const combinedData = mcqQuestions.map((question) => {
+//       // Find corresponding student answer or use default values if none exists
+//       const studentAnswer = studentAnswersMap[question.id] || {
+//         submitted_options: null,
+//         is_attempted: false,
+//         points: 0,
+//         marked: false,
+//         is_reported: false,
+//         reported_text: null,
+//       };
+
+//       return {
+//         ...question,
+//         submitted_options: studentAnswer.submitted_options,
+//         is_attempted: studentAnswer.is_attempted,
+//         points: studentAnswer.points,
+//         marked: studentAnswer.marked,
+//         is_reported: studentAnswer.is_reported,
+//         reported_text: studentAnswer.reported_text,
+//       };
+//     });
+
+//     res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions: combinedData });
+//   } catch (error) {
+//     console.error('Error fetching MCQ Questions:', error);
+//     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
+//   }
+// };
 
 
 
@@ -2034,5 +2203,206 @@ exports.getCodingQuestionsByDomain = async (req, res) => {
   } catch (error) {
       console.error('Error fetching Coding Questions:', error);
       res.status(500).json({ message: 'Error fetching Coding Questions', error });
+  }
+};
+
+
+
+// exports.getMCQQuestionsByDomain = async (req, res) => {
+//   try {
+//     const { domain_id } = req.params;
+//     const { student_id } = req.user.student_id;
+
+//     // Validate that student_id is provided
+//     if (!student_id) {
+//       return res.status(400).json({ message: 'student_id is required' });
+//     }
+
+//     // Fetch all MCQ questions for the specified domain
+//     const mcqQuestions = await MCQQuestion.findAll({
+//       where: { mcqdomain_id: domain_id },
+//       attributes: [
+//         'id', 'title', 'options', 'correct_answers', 'is_single_answer',
+//         'mcqdomain_id', 'code_snippets', 'question_type', 'approval_status',
+//         'created_by', 'difficulty', 'round_id', 'createdAt', 'updatedAt'
+//       ],
+//       raw: true
+//     });
+
+//     // Fetch StudentMcqAnswer data for the specified student and domain
+//     const studentAnswers = await StudentMcqAnswer.findAll({
+//       where: { student_id: student_id, domain_id: domain_id },
+//       attributes: [
+//         'question_id', 'submitted_options', 'is_attempted', 'points', 
+//         'marked', 'is_reported', 'reported_text'
+//       ],
+//       raw: true
+//     });
+
+//     // Map student answers to their respective question IDs for quick lookup
+//     const studentAnswersMap = studentAnswers.reduce((map, answer) => {
+//       map[answer.question_id] = answer;
+//       return map;
+//     }, {});
+
+//     // Combine MCQ question data with StudentMcqAnswer data and default values where missing
+//     const combinedData = mcqQuestions.map((question) => {
+//       // Find corresponding student answer or use default values if none exists
+//       const studentAnswer = studentAnswersMap[question.id] || {
+//         submitted_options: null,
+//         is_attempted: false,
+//         points: 0,
+//         marked: false,
+//         is_reported: false,
+//         reported_text: null,
+//       };
+
+//       return {
+//         ...question,
+//         submitted_options: studentAnswer.submitted_options,
+//         is_attempted: studentAnswer.is_attempted,
+//         points: studentAnswer.points,
+//         marked: studentAnswer.marked,
+//         is_reported: studentAnswer.is_reported,
+//         reported_text: studentAnswer.reported_text,
+//       };
+//     });
+
+//     res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions: combinedData });
+//   } catch (error) {
+//     console.error('Error fetching MCQ Questions:', error);
+//     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
+//   }
+// };
+
+
+// exports.getMCQQuestionsByDomain = async (req, res) => {
+//   try {
+//     const { domain_id } = req.params;
+//     const student_id = req.user.student_id; // Extract student_id from req.user set by JWT middleware
+
+//     // Fetch all MCQ questions for the specified domain
+//     const mcqQuestions = await MCQQuestion.findAll({
+//       where: { mcqdomain_id: domain_id },
+//       attributes: [
+//         'id', 'title', 'options', 'correct_answers', 'is_single_answer',
+//         'mcqdomain_id', 'code_snippets', 'question_type', 'approval_status',
+//         'created_by', 'difficulty', 'round_id', 'createdAt', 'updatedAt'
+//       ],
+//       raw: true
+//     });
+
+//     // Fetch StudentMcqAnswer data for the specified student and domain
+//     const studentAnswers = await StudentMcqAnswer.findAll({
+//       where: { student_id: student_id, domain_id: domain_id },
+//       attributes: [
+//         'question_id', 'submitted_options', 'is_attempted', 'points', 
+//         'marked', 'is_reported', 'reported_text'
+//       ],
+//       raw: true
+//     });
+
+//     // Map student answers to their respective question IDs for quick lookup
+//     const studentAnswersMap = studentAnswers.reduce((map, answer) => {
+//       map[answer.question_id] = answer;
+//       return map;
+//     }, {});
+
+//     // Combine MCQ question data with StudentMcqAnswer data and default values where missing
+//     const combinedData = mcqQuestions.map((question) => {
+//       // Find corresponding student answer or use default values if none exists
+//       const studentAnswer = studentAnswersMap[question.id] || {
+//         submitted_options: null,
+//         is_attempted: false,
+//         points: 0,
+//         marked: false,
+//         is_reported: false,
+//         reported_text: null,
+//       };
+
+//       return {
+//         ...question,
+//         submitted_options: studentAnswer.submitted_options,
+//         is_attempted: studentAnswer.is_attempted,
+//         points: studentAnswer.points,
+//         marked: studentAnswer.marked,
+//         is_reported: studentAnswer.is_reported,
+//         reported_text: studentAnswer.reported_text,
+//       };
+//     });
+
+//     res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions: combinedData });
+//   } catch (error) {
+//     console.error('Error fetching MCQ Questions:', error);
+//     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
+//   }
+// };
+
+exports.getMCQQuestionsByDomain = async (req, res) => {
+  try {
+    const { domain_id } = req.params;
+    // const student_id = req.user?.student_id; // Extract student_id from req.user
+    const student_id = req.user.id; // Use `id` instead of `student_id`
+
+    // Check if student_id is correctly set
+    if (!student_id) {
+      console.error('Student ID is undefined.');
+      return res.status(400).json({ message: 'Student ID is required' });
+    }
+
+    // Fetch all MCQ questions for the specified domain
+    const mcqQuestions = await MCQQuestion.findAll({
+      where: { mcqdomain_id: domain_id, approval_status: 'approved', question_type: 'practice'  },
+      attributes: [
+        'id', 'title', 'options', 'correct_answers', 'is_single_answer',
+        'mcqdomain_id', 'code_snippets', 'question_type', 'approval_status',
+        'created_by', 'difficulty', 'round_id', 'createdAt', 'updatedAt'
+      ],
+      raw: true
+    });
+
+    // Fetch StudentMcqAnswer data for the specified student and domain
+    const studentAnswers = await StudentMcqAnswer.findAll({
+      where: { student_id: student_id, domain_id: domain_id },
+      attributes: [
+        'question_id', 'submitted_options', 'is_attempted', 'points', 
+        'marked', 'is_reported', 'reported_text'
+      ],
+      raw: true
+    });
+
+    // Map student answers to their respective question IDs for quick lookup
+    const studentAnswersMap = studentAnswers.reduce((map, answer) => {
+      map[answer.question_id] = answer;
+      return map;
+    }, {});
+
+    // Combine MCQ question data with StudentMcqAnswer data and default values where missing
+    const combinedData = mcqQuestions.map((question) => {
+      // Find corresponding student answer or use default values if none exists
+      const studentAnswer = studentAnswersMap[question.id] || {
+        submitted_options: null,
+        is_attempted: false,
+        points: 0,
+        marked: false,
+        is_reported: false,
+        reported_text: null,
+      };
+
+      return {
+        ...question,
+        submitted_options: studentAnswer.submitted_options,
+        is_attempted: studentAnswer.is_attempted,
+        points: studentAnswer.points,
+        marked: studentAnswer.marked,
+        is_reported: studentAnswer.is_reported,
+        reported_text: studentAnswer.reported_text,
+      };
+    });
+
+    res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions: combinedData });
+  } catch (error) {
+    console.error('Error fetching MCQ Questions:', error);
+    res.status(500).json({ message: 'Error fetching MCQ Questions', error });
   }
 };
