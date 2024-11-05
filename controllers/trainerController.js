@@ -156,68 +156,68 @@ exports.addMCQQuestion = async (req, res) => {
 
 
 
-// // Trainer adds a new coding question
-// exports.addCodingQuestion = async (req, res) => {
-//   try {
-//     // Log the incoming request body for debugging
-//     console.log("Received request body:", req.body);
+// Trainer adds a new coding question
+exports.addCodingQuestion = async (req, res) => {
+  try {
+    // Log the incoming request body for debugging
+    console.log("Received request body:", req.body);
 
-//     const {
-//       title,
-//       description,
-//       input_format,
-//       output_format,
-//       test_cases,
-//       constraints,
-//       difficulty,
-//       solution,
-//       allowed_languages,
-//       codingquestiondomain_id,
-//       question_type,
-//       round_id,
-//     } = req.body;
+    const {
+      title,
+      description,
+      input_format,
+      output_format,
+      test_cases,
+      constraints,
+      difficulty,
+      solutions,
+      allowed_languages,
+      codingquestiondomain_id,
+      question_type,
+      round_id,
+    } = req.body;
 
-//     // Debugging - log the allowed_languages before proceeding
-//     console.log("Allowed languages received:", allowed_languages);
+    // Debugging - log the allowed_languages before proceeding
+    console.log("Allowed languages received:", allowed_languages);
 
-//     // Check if allowed_languages is present, fallback to default if not
-//     const languages = allowed_languages && allowed_languages.length > 0 ? allowed_languages : ["Python"];  // Default to Python if empty
-//     console.log("Languages used for creation:", languages);  // Debugging
+    // Check if allowed_languages is present, fallback to default if not
+    const languages = allowed_languages && allowed_languages.length > 0 ? allowed_languages : ["Python"];  // Default to Python if empty
+    console.log("Languages used for creation:", languages);  // Debugging
 
-//     // Check for codingquestiondomain_id and ensure it's null if not provided
-//     const domainId = codingquestiondomain_id || null;
-//     console.log("Domain ID used for creation:", domainId);  // Debugging
+    // Check for codingquestiondomain_id and ensure it's null if not provided
+    const domainId = codingquestiondomain_id || null;
+    console.log("Domain ID used for creation:", domainId);  // Debugging
 
-//     // Create the coding question
-//     const codingQuestion = await CodingQuestion.create({
-//       title,
-//       description,
-//       input_format,
-//       output_format,
-//       test_cases,
-//       constraints: constraints || null,
-//       difficulty: difficulty || null,
-//       solution: solution || null,
-//       allowed_languages: languages,  // Debugging point to see what gets passed here
-//       codingquestiondomain_id: domainId,  // Explicitly set to null if not provided
-//       question_type,
-//       approval_status: 'pending',
-//       created_by: req.user.id,
-//       round_id: round_id || null  // Add round_id, allow it to be null if not provided
+    // Create the coding question
+    const codingQuestion = await CodingQuestion.create({
+      title,
+      description,
+      input_format,
+      output_format,
+      test_cases,
+      constraints: constraints || null,
+      difficulty: difficulty || null,
+      solutions: solutions || null,
+      allowed_languages: languages,  // Debugging point to see what gets passed here
+      codingquestiondomain_id: domainId,  // Explicitly set to null if not provided
+      question_type,
+      approval_status: 'pending',
+      created_by: req.user.id,
+      round_id: round_id || null  // Add round_id, allow it to be null if not provided
 
-//     });
+    });
 
-//     // Debugging - confirm successful creation
-//     console.log("Coding question created:", codingQuestion);
+    // Debugging - confirm successful creation
+    console.log("Coding question created:", codingQuestion);
 
-//     res.status(201).json({ message: 'Coding Question created successfully', codingQuestion });
-//   } catch (error) {
-//     // Debugging - log the error if something fails
-//     console.error("Error creating Coding Question:", error);
+    res.status(201).json({ message: 'Coding Question created successfully', codingQuestion });
+  } catch (error) {
+    // Debugging - log the error if something fails
+    console.error("Error creating Coding Question:", error);
 
-//     res.status(500).json({ message: 'Error creating coding question', error });
-//   }
-// };
+    res.status(500).json({ message: 'Error creating coding question', error });
+  }
+};
 
 
 // exports.addCodingQuestion = async (req, res) => {
@@ -294,89 +294,185 @@ exports.addMCQQuestion = async (req, res) => {
 // };
 
 
-exports.addCodingQuestion = async (req, res) => {
-  try {
-    const {
-      title,
-      description,
-      input_format,
-      output_format,
-      test_cases,
-      constraints,
-      difficulty,
-      solutions, // Multiple solutions from the request body
-      allowed_languages, // Expecting array of language IDs
-      codingquestiondomain_id,
-      question_type,
-      round_id
-    } = req.body;
+// exports.addCodingQuestion = async (req, res) => {
+//   try {
+//     const {
+//       title,
+//       description,
+//       input_format,
+//       output_format,
+//       test_cases,
+//       constraints,
+//       difficulty,
+//       solutions, // Multiple solutions from the request body
+//       allowed_languages, // Expecting array of language IDs
+//       codingquestiondomain_id,
+//       question_type,
+//       round_id
+//     } = req.body;
 
-    // Log received coding question data for debugging
-    console.log('Received coding question data:', req.body);
+//     // Log received coding question data for debugging
+//     console.log('Received coding question data:', req.body);
 
-    // Ensure required fields are present
-    if (!title || !description || !input_format || !output_format || !test_cases || !allowed_languages || !solutions) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
+//     // Ensure required fields are present
+//     if (!title || !description || !input_format || !output_format || !test_cases || !allowed_languages || !solutions) {
+//       return res.status(400).json({ message: 'Missing required fields' });
+//     }
 
-    // Ensure solutions is an array of objects
-    if (!Array.isArray(solutions) || solutions.length === 0) {
-      return res.status(400).json({ message: 'Solutions must be a non-empty array' });
-    }
+//     // Ensure solutions is an array of objects
+//     if (!Array.isArray(solutions) || solutions.length === 0) {
+//       return res.status(400).json({ message: 'Solutions must be a non-empty array' });
+//     }
 
-    // Ensure test cases are in the correct format (array of objects)
-    if (!Array.isArray(test_cases)) {
-      return res.status(400).json({ message: 'Test cases must be a valid array' });
-    }
+//     // Ensure test cases are in the correct format (array of objects)
+//     if (!Array.isArray(test_cases)) {
+//       return res.status(400).json({ message: 'Test cases must be a valid array' });
+//     }
 
-    // Fetch the allowed languages from the database to validate them
-    const existingLanguages = await AllowedLanguage.findAll({
-      where: { id: allowed_languages },
-      attributes: ['id', 'language_name']
-    });
+//     // Fetch the allowed languages from the database to validate them
+//     const existingLanguages = await AllowedLanguage.findAll({
+//       where: { id: allowed_languages },
+//       attributes: ['id', 'language_name']
+//     });
 
-    // Check if all provided languages exist in the AllowedLanguages table
-    if (existingLanguages.length !== allowed_languages.length) {
-      return res.status(400).json({ message: 'One or more selected languages are not allowed' });
-    }
+//     // Check if all provided languages exist in the AllowedLanguages table
+//     if (existingLanguages.length !== allowed_languages.length) {
+//       return res.status(400).json({ message: 'One or more selected languages are not allowed' });
+//     }
 
-    // Create the coding question with validated allowed languages
-    const codingQuestion = await CodingQuestion.create({
-      title,
-      description,
-      input_format,
-      output_format,
-      test_cases, // Save test cases as a JSON array
-      constraints: constraints || null, // Optional constraints
-      difficulty: difficulty || 'Level1', // Default difficulty is Level1 if not provided
-      solutions, // Save the array of solutions in the 'solutions' field
-      allowed_languages: existingLanguages.map(lang => lang.language_name), // Use language names for display purposes
-      codingquestiondomain_id: codingquestiondomain_id || null, // Optional domain ID
-      question_type,
-      approval_status: 'pending', // Set approval status to 'pending'
-      created_by: req.user.id, // Assume `req.user.id` is the ID of the trainer
-      round_id: round_id || null // Optional round ID
-    });
+//     // Create the coding question with validated allowed languages
+//     const codingQuestion = await CodingQuestion.create({
+//       title,
+//       description,
+//       input_format,
+//       output_format,
+//       test_cases, // Save test cases as a JSON array
+//       constraints: constraints || null, // Optional constraints
+//       difficulty: difficulty || 'Level1', // Default difficulty is Level1 if not provided
+//       solutions, // Save the array of solutions in the 'solutions' field
+//       allowed_languages: existingLanguages.map(lang => lang.language_name), // Use language names for display purposes
+//       codingquestiondomain_id: codingquestiondomain_id || null, // Optional domain ID
+//       question_type,
+//       approval_status: 'pending', // Set approval status to 'pending'
+//       created_by: req.user.id, // Assume `req.user.id` is the ID of the trainer
+//       round_id: round_id || null // Optional round ID
+//     });
 
-    // Log the newly created coding question for debugging
-    console.log('Coding question created successfully:', codingQuestion);
+//     // Log the newly created coding question for debugging
+//     console.log('Coding question created successfully:', codingQuestion);
 
-    // Return a success response with the created coding question
-    res.status(201).json({
-      message: 'Coding Question created successfully',
-      codingQuestion
-    });
-  } catch (error) {
-    // Log the error for debugging
-    console.error('Error creating coding question:', error);
+//     // Return a success response with the created coding question
+//     res.status(201).json({
+//       message: 'Coding Question created successfully',
+//       codingQuestion
+//     });
+//   } catch (error) {
+//     // Log the error for debugging
+//     console.error('Error creating coding question:', error);
 
-    // Return a 500 Internal Server Error response
-    res.status(500).json({
-      message: 'Error creating coding question',
-      error
-    });
-  }
-};
+//     // Return a 500 Internal Server Error response
+//     res.status(500).json({
+//       message: 'Error creating coding question',
+//       error
+//     });
+//   }
+// };
+
+
+// exports.addCodingQuestion = async (req, res) => {
+//   try {
+//     const {
+//       title,
+//       description,
+//       input_format,
+//       output_format,
+//       test_cases,
+//       constraints,
+//       difficulty,
+//       solutions, // Multiple solutions from the request body
+//       allowed_languages, // Expecting array of language IDs
+//       codingquestiondomain_id,
+//       question_type,
+//       round_id
+//     } = req.body;
+
+//     // Log received coding question data for debugging
+//     console.log('Received coding question data:', req.body);
+
+//     // Detailed validation with logs
+//     if (!title) {
+//       console.error("Missing title");
+//       return res.status(400).json({ message: 'Missing required field: title' });
+//     }
+//     if (!description) {
+//       console.error("Missing description");
+//       return res.status(400).json({ message: 'Missing required field: description' });
+//     }
+//     if (!input_format) {
+//       console.error("Missing input_format");
+//       return res.status(400).json({ message: 'Missing required field: input_format' });
+//     }
+//     if (!output_format) {
+//       console.error("Missing output_format");
+//       return res.status(400).json({ message: 'Missing required field: output_format' });
+//     }
+//     if (!test_cases || !Array.isArray(test_cases)) {
+//       console.error("Invalid test_cases", test_cases);
+//       return res.status(400).json({ message: 'Test cases must be a valid array' });
+//     }
+//     if (!allowed_languages || !Array.isArray(allowed_languages)) {
+//       console.error("Invalid allowed_languages", allowed_languages);
+//       return res.status(400).json({ message: 'Allowed languages must be a valid array' });
+//     }
+//     if (!solutions || !Array.isArray(solutions) || solutions.length === 0) {
+//       console.error("Invalid solutions", solutions);
+//       return res.status(400).json({ message: 'Solutions must be a non-empty array' });
+//     }
+
+//     // Fetch the allowed languages from the database to validate them
+//     const existingLanguages = await AllowedLanguage.findAll({
+//       where: { id: allowed_languages },
+//       attributes: ['id', 'language_name']
+//     });
+
+//     if (existingLanguages.length !== allowed_languages.length) {
+//       console.error("One or more selected languages are not allowed");
+//       return res.status(400).json({ message: 'One or more selected languages are not allowed' });
+//     }
+
+//     // Create the coding question
+//     const codingQuestion = await CodingQuestion.create({
+//       title,
+//       description,
+//       input_format,
+//       output_format,
+//       test_cases,
+//       constraints: constraints || null,
+//       difficulty: difficulty || 'Level1',
+//       solutions,
+//       allowed_languages: existingLanguages.map(lang => lang.language_name),
+//       codingquestiondomain_id: codingquestiondomain_id || null,
+//       question_type,
+//       approval_status: 'pending',
+//       created_by: req.user.id,
+//       round_id: round_id || null
+//     });
+
+//     console.log('Coding question created successfully:', codingQuestion);
+
+//     res.status(201).json({
+//       message: 'Coding Question created successfully',
+//       codingQuestion
+//     });
+//   } catch (error) {
+//     console.error('Error creating coding question:', error);
+//     res.status(500).json({
+//       message: 'Error creating coding question',
+//       error
+//     });
+//   }
+// };
+
 
 
 

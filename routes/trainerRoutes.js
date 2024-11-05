@@ -58,8 +58,8 @@ router.get('/coding-domains',verifyTrainer, adminController.getAllCodingDomains)
 
 
 
-router.get('/assessments', verifyTrainer, adminController.getAllAssessments);
-router.get('/assessment-rounds/round-ids/:assessment_id', verifyAdmin, adminController.getRoundIdsByAssessmentId);
+router.get('/get-all-assessments', verifyTrainer, adminController.getAllAssessments);
+router.get('/assessment-rounds/round-ids/:assessment_id', verifyTrainer, adminController.getRoundIdsByAssessmentId);
 
 
 module.exports = router;
