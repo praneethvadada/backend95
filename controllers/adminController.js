@@ -57,6 +57,7 @@ exports.adminLogin = async (req, res) => {
 };
 
 
+
 // Update admin details
 exports.updateAdmin = [
   upload.single('logo'),  // Middleware to handle logo file upload (optional)
