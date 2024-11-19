@@ -33,7 +33,6 @@ exports.createAdmin = [
 
 
 
-
 exports.adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -255,6 +254,80 @@ exports.addCodingDomain = async (req, res) => {
 };
 
 
+
+
+// // Add MCQ Domain
+// exports.addMCQDomain = async (req, res) => {
+//   try {
+//     const { name, parent_id } = req.body;  
+    
+//     // Create new MCQ domain
+//     const mcqDomain = await MCQDomain.create({
+//       name,
+//       parent_id: parent_id || null,  
+//       admin_id: req.user.id  
+//     });
+
+//     // Fetch the newly created domain with its children
+//     const newDomain = await MCQDomain.findByPk(mcqDomain.id);
+
+//     res.status(200).json({ message: 'MCQ Domain created successfully', mcqDomain: newDomain });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error creating MCQ Domain', error });
+//   }
+// };
+
+// // Add Coding Domain
+// exports.addCodingDomain = async (req, res) => {
+//   try {
+//     const { name, parent_id } = req.body;
+
+//     // Create new Coding domain
+//     const codingDomain = await CodingQuestionDomain.create({
+//       name,
+//       parent_id: parent_id || null,
+//       admin_id: req.user.id
+//     });
+
+//     // Fetch the newly created domain with its children
+//     const newDomain = await CodingQuestionDomain.findByPk(codingDomain.id);
+
+//     res.status(200).json({ message: 'Coding Domain created successfully', codingDomain: newDomain });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error creating Coding Domain', error });
+//   }
+// };
+
+
+// Fetch Child Domains of a Specific Domain
+exports.getcodingChildDomains = async (req, res) => {
+  try {
+    const { parent_id } = req.params; // Get the parent_id from route parameters
+
+    // Fetch all domains where the parent_id matches the provided ID
+    const childDomains = await CodingQuestionDomain.findAll({
+      where: { parent_id }, // Sequelize query to filter by parent_id
+    });
+
+    if (childDomains.length === 0) {
+      return res.status(200).json({
+        message: 'No child domains found for the provided parent ID',
+        childDomains: [],
+      });
+    }
+
+    res.status(200).json({
+      message: 'Child domains fetched successfully',
+      childDomains,
+    });
+  } catch (error) {
+    console.error('Error fetching child domains:', error);
+    res.status(500).json({ message: 'Error fetching child domains', error });
+  }
+};
+
+
+
 // Edit MCQ Domain
 exports.editMCQDomain = async (req, res) => {
   try {
@@ -298,6 +371,35 @@ exports.deleteMCQDomain = async (req, res) => {
 };
 
 
+
+
+
+
+// Edit Coding Domain
+// exports.editCodingDomain = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { name, parent_id } = req.body;
+
+//     // Find the domain by ID
+//     const codingDomain = await CodingQuestionDomain.findByPk(id);
+//     if (!codingDomain) {
+//       return res.status(404).json({ message: 'Coding Domain not found' });
+//     }
+
+//     // Update domain details
+//     codingDomain.name = name || codingDomain.name;
+//     codingDomain.parent_id = parent_id || codingDomain.parent_id;
+
+//     await codingDomain.save();
+//     res.status(200).json({ message: 'Coding Domain updated successfully', codingDomain });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error updating Coding Domain', error });
+//   }
+// };
+
+
+// Edit Coding Domain
 // Edit Coding Domain
 exports.editCodingDomain = async (req, res) => {
   try {
@@ -310,16 +412,33 @@ exports.editCodingDomain = async (req, res) => {
       return res.status(404).json({ message: 'Coding Domain not found' });
     }
 
-    // Update domain details
-    codingDomain.name = name || codingDomain.name;
-    codingDomain.parent_id = parent_id || codingDomain.parent_id;
+    // Update domain details, ensuring parent_id can be set to null if explicitly provided
+    if (name !== undefined) {
+      codingDomain.name = name;
+    }
+
+    if (req.body.hasOwnProperty('parent_id')) {
+      codingDomain.parent_id = parent_id; // Allows setting parent_id to a value, even null
+    }
 
     await codingDomain.save();
-    res.status(200).json({ message: 'Coding Domain updated successfully', codingDomain });
+
+    res.status(200).json({
+      message: 'Coding Domain updated successfully',
+      codingDomain,
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error updating Coding Domain', error });
+    res.status(500).json({
+      message: 'Error updating Coding Domain',
+      error: error.message,
+    });
   }
 };
+
+
+
+
+
 
 // Delete Coding Domain
 exports.deleteCodingDomain = async (req, res) => {
@@ -341,248 +460,6 @@ exports.deleteCodingDomain = async (req, res) => {
 };
 
 
-
-
-
-// // Admin changes approval status of a question
-// exports.updateApprovalStatus = async (req, res) => {
-//   try {
-//     const { question_id, question_type, question_category, approval_status } = req.body;
-
-//     // Validate approval_status
-//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
-//       return res.status(400).json({ message: 'Invalid approval status' });
-//     }
-
-//     // Update coding question or mcq question depending on the category
-//     let question;
-//     if (question_category === 'coding') {
-//       question = await CodingQuestion.findByPk(question_id);
-//     } else if (question_category === 'mcq') {
-//       question = await MCQQuestion.findByPk(question_id);
-//     }
-
-//     if (!question) {
-//       return res.status(404).json({ message: 'Question not found' });
-//     }
-
-//     // Update approval status
-//     question.approval_status = approval_status;
-//     await question.save();
-
-//     // If the question is approved and is a practice question, add it to PracticeQuestions table
-//     if (approval_status === 'approved' && question.question_type === 'practice') {
-//       await PracticeQuestion.create({
-//         coding_question_id: question_category === 'coding' ? question.id : null,
-//         mcq_question_id: question_category === 'mcq' ? question.id : null,
-//         created_by: req.user.id  // Assume admin's ID is attached to req.user.id
-//       });
-//     }
-
-//     res.status(200).json({ message: 'Approval status updated successfully', question });
-//   } catch (error) {
-//     console.error('Error updating approval status:', error);
-//     res.status(500).json({ message: 'Error updating approval status', error });
-//   }
-// };
-
-
-// // Admin updates the approval status of a coding question
-// exports.updateCodingQuestionApprovalStatus = async (req, res) => {
-//   try {
-//     const { question_id, approval_status } = req.body;
-
-//     // Validate approval_status
-//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
-//       return res.status(400).json({ message: 'Invalid approval status' });
-//     }
-
-//     // Find the coding question by ID
-//     const codingQuestion = await CodingQuestion.findByPk(question_id);
-
-//     if (!codingQuestion) {
-//       return res.status(404).json({ message: 'Coding Question not found' });
-//     }
-
-//     // Update approval status
-//     codingQuestion.approval_status = approval_status;
-//     await codingQuestion.save();
-
-//     // If the question is approved and is a practice question, add it to PracticeQuestions table
-//     if (approval_status === 'approved' && codingQuestion.question_type === 'practice') {
-//       await PracticeQuestion.create({
-//         coding_question_id: codingQuestion.id,
-//         created_by: req.user.id  // Assume admin's ID is attached to req.user.id
-//       });
-//     }
-
-//     res.status(200).json({ message: 'Coding Question approval status updated successfully', codingQuestion });
-//   } catch (error) {
-//     console.error('Error updating coding question approval status:', error);
-//     res.status(500).json({ message: 'Error updating coding question approval status', error });
-//   }
-// };
-
-
-
-
-// // Admin updates the approval status of an MCQ question
-// exports.updateMCQQuestionApprovalStatus = async (req, res) => {
-//   try {
-//     const { question_id, approval_status } = req.body;
-
-//     // Validate approval_status
-//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
-//       return res.status(400).json({ message: 'Invalid approval status' });
-//     }
-
-//     // Find the MCQ question by ID
-//     const mcqQuestion = await MCQQuestion.findByPk(question_id);
-
-//     if (!mcqQuestion) {
-//       return res.status(404).json({ message: 'MCQ Question not found' });
-//     }
-
-//     // Update approval status
-//     mcqQuestion.approval_status = approval_status;
-//     await mcqQuestion.save();
-
-//     // If the question is approved and is a practice question, add it to PracticeQuestions table
-//     if (approval_status === 'approved' && mcqQuestion.question_type === 'practice') {
-//       await PracticeQuestion.create({
-//         mcq_question_id: mcqQuestion.id,
-//         created_by: req.user.id  // Assume admin's ID is attached to req.user.id
-//       });
-//     }
-
-//     res.status(200).json({ message: 'MCQ Question approval status updated successfully', mcqQuestion });
-//   } catch (error) {
-//     console.error('Error updating MCQ question approval status:', error);
-//     res.status(500).json({ message: 'Error updating MCQ question approval status', error });
-//   }
-// };
-
-
-// // Admin updates the approval status of a coding question
-// exports.updateCodingQuestionApprovalStatus = async (req, res) => {
-//   try {
-//     const { question_id, approval_status } = req.body;
-
-//     // Validate approval_status
-//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
-//       return res.status(400).json({ message: 'Invalid approval status' });
-//     }
-
-//     // Find the coding question by ID
-//     const codingQuestion = await CodingQuestion.findByPk(question_id);
-
-//     if (!codingQuestion) {
-//       return res.status(404).json({ message: 'Coding Question not found' });
-//     }
-
-//     // Update approval status
-//     codingQuestion.approval_status = approval_status;
-//     await codingQuestion.save();
-
-//     // If approved and it's a practice question, add to PracticeQuestions table
-//     if (approval_status === 'approved' && codingQuestion.question_type === 'practice') {
-//       await PracticeQuestion.create({
-//         coding_question_id: codingQuestion.id,
-//         created_by: req.user.id
-//       });
-//     }
-
-//     res.status(200).json({ message: 'Coding Question approval status updated successfully', codingQuestion });
-//   } catch (error) {
-//     console.error('Error updating coding question approval status:', error);
-//     res.status(500).json({ message: 'Error updating coding question approval status', error });
-//   }
-// };
-
-
-// // Admin updates the approval status of an MCQ question
-// exports.updateMCQQuestionApprovalStatus = async (req, res) => {
-//   try {
-//     const { question_id, approval_status } = req.body;
-
-//     // Validate approval_status
-//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
-//       return res.status(400).json({ message: 'Invalid approval status' });
-//     }
-
-//     // Find the MCQ question by ID
-//     const mcqQuestion = await MCQQuestion.findByPk(question_id);
-
-//     if (!mcqQuestion) {
-//       return res.status(404).json({ message: 'MCQ Question not found' });
-//     }
-
-//     // Update approval status
-//     mcqQuestion.approval_status = approval_status;
-//     await mcqQuestion.save();
-
-//     // If approved and it's a practice question, add to PracticeQuestions table
-//     if (approval_status === 'approved' && mcqQuestion.question_type === 'practice') {
-//       await PracticeQuestion.create({
-//         mcq_question_id: mcqQuestion.id,
-//         created_by: req.user.id
-//       });
-//     }
-
-//     res.status(200).json({ message: 'MCQ Question approval status updated successfully', mcqQuestion });
-//   } catch (error) {
-//     console.error('Error updating MCQ question approval status:', error);
-//     res.status(500).json({ message: 'Error updating MCQ question approval status', error });
-//   }
-// };
-
-
-
-// Admin updates the approval status of a coding question
-// exports.updateCodingQuestionApprovalStatus = async (req, res) => {
-//   try {
-//     const { question_id } = req.params;  // Get question ID from URL
-//     const {  approval_status } = req.body;
-
-//     // Validate approval_status
-//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
-//       return res.status(400).json({ message: 'Invalid approval status' });
-//     }
-
-//     // Find the coding question by ID
-//     const codingQuestion = await CodingQuestion.findByPk(question_id);
-
-//     if (!codingQuestion) {
-//       return res.status(404).json({ message: 'Coding Question not found' });
-//     }
-
-//     // Update approval status
-//     codingQuestion.approval_status = approval_status;
-//     await codingQuestion.save();
-
-//     // If approved and it's a practice question, add to PracticeQuestions table
-//     if (approval_status === 'approved' && codingQuestion.question_type === 'practice') {
-//       await PracticeQuestion.create({
-//         coding_question_id: codingQuestion.id,
-//         created_by: req.user.id
-//       });
-//     }
-//  // Handle assessment questions: If approved and domain_id is null, add to AssessmentQuestions table
-//  if (approval_status === 'approved' && codingQuestion.question_type === 'assessment' && !codingQuestion.domain_id) {
-//   await AssessmentQuestion.create({
-//     coding_question_id: codingQuestion.id,
-//     created_by: req.user.id  // Admin ID from token
-//   });
-// }
-
-    
-
-//     res.status(200).json({ message: 'Coding Question approval status updated successfully', codingQuestion });
-//   } catch (error) {
-//     console.error('Error updating coding question approval status:', error);
-//     res.status(500).json({ message: 'Error updating coding question approval status', error });
-//   }
-// };
 
 // Admin updates the approval status of a coding question
 exports.updateCodingQuestionApprovalStatus = async (req, res) => {
@@ -635,221 +512,6 @@ exports.updateCodingQuestionApprovalStatus = async (req, res) => {
     });
   }
 };
-
-
-
-// Admin updates the approval status of an MCQ question
-// exports.updateMCQQuestionApprovalStatus = async (req, res) => {
-//   try {
-//     const { question_id } = req.params;  // Get question ID from URL
-
-//     const {  approval_status } = req.body;
-
-//     // Validate approval_status
-//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
-//       return res.status(400).json({ message: 'Invalid approval status' });
-//     }
-
-//     // Find the MCQ question by ID
-//     const mcqQuestion = await MCQQuestion.findByPk(question_id);
-
-//     if (!mcqQuestion) {
-//       return res.status(404).json({ message: 'MCQ Question not found' });
-//     }
-
-//     // Update approval status
-//     mcqQuestion.approval_status = approval_status;
-//     await mcqQuestion.save();
-
-//     // If approved and it's a practice question, add to PracticeQuestions table
-//     if (approval_status === 'approved' && mcqQuestion.question_type === 'practice') {
-//       await PracticeQuestion.create({
-//         mcq_question_id: mcqQuestion.id,
-//         created_by: req.user.id
-//       });
-//     }
-
-//     res.status(200).json({ message: 'MCQ Question approval status updated successfully', mcqQuestion });
-//   } catch (error) {
-//     console.error('Error updating MCQ question approval status:', error);
-//     res.status(500).json({ message: 'Error updating MCQ question approval status', error });
-//   }
-// };
-
-
-// Admin updates the approval status of an MCQ question
-// exports.updateMCQQuestionApprovalStatus = async (req, res) => {
-//   try {
-//     const { question_id } = req.params;  // Get question ID from URL
-//     const { approval_status, batch_id } = req.body;  // Include batch_id in the request for batch association
-
-//     // Validate approval_status
-//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
-//       return res.status(400).json({ message: 'Invalid approval status' });
-//     }
-
-//     // Find the MCQ question by ID
-//     const mcqQuestion = await MCQQuestion.findByPk(question_id);
-
-//     if (!mcqQuestion) {
-//       return res.status(404).json({ message: 'MCQ Question not found' });
-//     }
-
-//     // Update approval status
-//     mcqQuestion.approval_status = approval_status;
-//     await mcqQuestion.save();
-
-//     // If approved and it's a practice question, add to BatchPracticeQuestions table
-//     if (approval_status === 'approved' && mcqQuestion.question_type === 'practice') {
-//       // Check if batch_id is provided, as we need to associate the question with a batch
-//       if (!batch_id) {
-//         return res.status(400).json({ message: 'Batch ID is required for adding practice questions' });
-//       }
-
-//       // Check if the question already exists in the BatchPracticeQuestions table
-//       const existingBatchQuestion = await BatchPracticeQuestion.findOne({
-//         where: {
-//           batch_id: batch_id,
-//           mcq_question_id: mcqQuestion.id,
-//         },
-//       });
-
-//       if (!existingBatchQuestion) {
-//         // Add the question to the BatchPracticeQuestions table
-//         await BatchPracticeQuestion.create({
-//           batch_id: batch_id,
-//           mcq_question_id: mcqQuestion.id,
-//           created_by: req.user.id  // Admin ID from token
-//         });
-//       }
-//     }
-
-//     // If approved and it's an assessment question with domain_id being null, add to AssessmentQuestions table
-//     if (approval_status === 'approved' && mcqQuestion.question_type === 'assessment' && !mcqQuestion.domain_id) {
-//       await AssessmentQuestion.create({
-//         mcq_question_id: mcqQuestion.id,
-//         created_by: req.user.id  // Admin ID from token
-//       });
-//     }
-
-//     res.status(200).json({
-//       message: 'MCQ Question approval status updated successfully',
-//       mcqQuestion
-//     });
-//   } catch (error) {
-//     console.error('Error updating MCQ question approval status:', error);
-//     res.status(500).json({
-//       message: 'Error updating MCQ question approval status',
-//       error
-//     });
-//   }
-// };
-
-
-// Admin updates the approval status of an MCQ question
-// exports.updateMCQQuestionApprovalStatus = async (req, res) => {
-//   try {
-//     const { question_id } = req.params;  // Get question ID from URL
-//     const { approval_status } = req.body;
-
-//     // Validate approval_status
-//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
-//       return res.status(400).json({ message: 'Invalid approval status' });
-//     }
-
-//     // Find the MCQ question by ID
-//     const mcqQuestion = await MCQQuestion.findByPk(question_id);
-
-//     if (!mcqQuestion) {
-//       return res.status(404).json({ message: 'MCQ Question not found' });
-//     }
-
-//     // Update the approval status
-//     mcqQuestion.approval_status = approval_status;
-//     await mcqQuestion.save();
-
-//     // If the question is approved and is a practice question, add it to the PracticeQuestions table
-//     if (approval_status === 'approved' && mcqQuestion.question_type === 'practice') {
-//       await PracticeQuestion.create({
-//         mcq_question_id: mcqQuestion.id,
-//         created_by: req.user.id  // Admin ID from token
-//       });
-//     }
-
-//     // If the question is approved, is an assessment question, and the domain ID is null,
-//     // add it to the AssessmentQuestions table
-//     if (approval_status === 'approved' && mcqQuestion.question_type === 'assessment' && !mcqQuestion.domain_id) {
-//       await AssessmentQuestion.create({
-//         mcq_question_id: mcqQuestion.id,
-//         created_by: req.user.id  // Admin ID from token
-//       });
-//     }
-
-//     res.status(200).json({
-//       message: 'MCQ Question approval status updated successfully',
-//       mcqQuestion
-//     });
-//   } catch (error) {
-//     console.error('Error updating MCQ question approval status:', error);
-//     res.status(500).json({
-//       message: 'Error updating MCQ question approval status',
-//       error
-//     });
-//   }
-// };
-
-
-// Admin updates the approval status of an MCQ question
-// exports.updateMCQQuestionApprovalStatus = async (req, res) => {
-//   try {
-//     const { question_id } = req.params;  // Get question ID from URL
-//     const { approval_status } = req.body;
-
-//     // Validate approval_status
-//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
-//       return res.status(400).json({ message: 'Invalid approval status' });
-//     }
-
-//     // Find the MCQ question by ID
-//     const mcqQuestion = await MCQQuestion.findByPk(question_id);
-
-//     if (!mcqQuestion) {
-//       return res.status(404).json({ message: 'MCQ Question not found' });
-//     }
-
-//     // Update the approval status
-//     mcqQuestion.approval_status = approval_status;
-//     await mcqQuestion.save();
-
-//     // If the question is approved and is a practice question, add it to the PracticeQuestions table
-//     if (approval_status === 'approved' && mcqQuestion.question_type === 'practice') {
-//       await PracticeQuestion.create({
-//         mcq_question_id: mcqQuestion.id,
-//         created_by: req.user.id  // Admin ID from token
-//       });
-//     }
-
-//     // If the question is approved, is an assessment question, and the domain ID is null,
-//     // add it to the AssessmentQuestions table
-//     if (approval_status === 'approved' && mcqQuestion.question_type === 'assessment' && !mcqQuestion.mcqdomain_id) {
-//       await AssessmentQuestion.create({
-//         mcq_question_id: mcqQuestion.id,
-//         created_by: req.user.id  // Admin ID from token
-//       });
-//     }
-
-//     res.status(200).json({
-//       message: 'MCQ Question approval status updated successfully',
-//       mcqQuestion
-//     });
-//   } catch (error) {
-//     console.error('Error updating MCQ question approval status:', error);
-//     res.status(500).json({
-//       message: 'Error updating MCQ question approval status',
-//       error
-//     });
-//   }
-// };
 
 
 // Admin updates the approval status of an MCQ question
@@ -921,59 +583,6 @@ exports.updateMCQQuestionApprovalStatus = async (req, res) => {
 
 
 
-// // Admin updates the approval status of an MCQ question
-// exports.updateMCQQuestionApprovalStatus = async (req, res) => {
-//   try {
-//     const { question_id } = req.params;  // Get question ID from URL
-//     const { approval_status } = req.body;
-
-//     // Validate approval_status
-//     if (!['approved', 'rejected', 'pending'].includes(approval_status)) {
-//       return res.status(400).json({ message: 'Invalid approval status' });
-//     }
-
-//     // Find the MCQ question by ID
-//     const mcqQuestion = await MCQQuestion.findByPk(question_id);
-
-//     if (!mcqQuestion) {
-//       return res.status(404).json({ message: 'MCQ Question not found' });
-//     }
-
-//     // Update approval status
-//     mcqQuestion.approval_status = approval_status;
-//     await mcqQuestion.save();
-
-//     // If approved and it's a practice question, add to PracticeQuestions table
-//     if (approval_status === 'approved' && mcqQuestion.question_type === 'practice') {
-//       await PracticeQuestion.create({
-//         mcq_question_id: mcqQuestion.id,
-//         created_by: req.user.id  // Admin ID from token
-//       });
-//     }
-
-//     // If approved and it's an assessment question with domain_id being null, add to AssessmentQuestions table
-//     if (approval_status === 'approved' && mcqQuestion.question_type === 'assessment' && !mcqQuestion.domain_id) {
-//       await AssessmentQuestion.create({
-//         mcq_question_id: mcqQuestion.id,
-//         created_by: req.user.id  // Admin ID from token
-//       });
-//     }
-
-//     res.status(200).json({
-//       message: 'MCQ Question approval status updated successfully',
-//       mcqQuestion
-//     });
-//   } catch (error) {
-//     console.error('Error updating MCQ question approval status:', error);
-//     res.status(500).json({
-//       message: 'Error updating MCQ question approval status',
-//       error
-//     });
-//   }
-// };
-
-
-
 
 
 // Admin fetches all pending coding questions
@@ -1016,237 +625,6 @@ exports.getAllPendingMCQQuestions = async (req, res) => {
 
 
 
-
-// // Add multiple questions (coding or mcq) to a batch
-// exports.addQuestionsToBatch = async (req, res) => {
-//   try {
-//     const { batch_id } = req.params;
-//     const { coding_question_ids, mcq_question_ids } = req.body;
-
-//     // Check if the batch exists
-//     const batch = await Batch.findByPk(batch_id);
-//     if (!batch) {
-//       return res.status(404).json({ message: 'Batch not found' });
-//     }
-
-//     // Ensure at least one list of questions is provided
-//     if ((!coding_question_ids || coding_question_ids.length === 0) && (!mcq_question_ids || mcq_question_ids.length === 0)) {
-//       return res.status(400).json({ message: 'No questions provided to add' });
-//     }
-
-//     // Add coding questions if provided
-//     if (coding_question_ids && coding_question_ids.length > 0) {
-//       for (let coding_question_id of coding_question_ids) {
-//         const codingQuestion = await CodingQuestion.findByPk(coding_question_id);
-//         if (codingQuestion && codingQuestion.approval_status === 'approved') {
-//           await BatchPracticeQuestion.create({
-//             batch_id,
-//             coding_question_id,
-//             mcq_question_id: null
-//           });
-//         }
-//       }
-//     }
-
-//     // Add MCQ questions if provided
-//     if (mcq_question_ids && mcq_question_ids.length > 0) {
-//       for (let mcq_question_id of mcq_question_ids) {
-//         const mcqQuestion = await MCQQuestion.findByPk(mcq_question_id);
-//         if (mcqQuestion && mcqQuestion.approval_status === 'approved') {
-//           await BatchPracticeQuestion.create({
-//             batch_id,
-//             coding_question_id: null,
-//             mcq_question_id
-//           });
-//         }
-//       }
-//     }
-
-//     res.status(201).json({ message: 'Questions added to batch successfully' });
-//   } catch (error) {
-//     console.error('Error adding questions to batch:', error);
-//     res.status(500).json({ message: 'Error adding questions to batch', error });
-//   }
-// };
-
-
-
-// exports.addQuestionsToBatch = async (req, res) => {
-//   try {
-//     const { batch_id } = req.params; // Get batch_id from params
-//     const { coding_question_ids, mcq_question_ids } = req.body; // Get the question IDs from the request body
-
-//     // Log the incoming data for debugging
-//     console.log('Batch ID:', batch_id);
-//     console.log('Coding Question IDs:', coding_question_ids);
-//     console.log('MCQ Question IDs:', mcq_question_ids);
-
-//     // Process Coding Questions
-//     if (coding_question_ids && coding_question_ids.length > 0) {
-//       for (let codingQuestionId of coding_question_ids) {
-//         // Log each coding question ID being processed
-//         console.log('Processing Coding Question ID:', codingQuestionId);
-
-//         const [batchPracticeQuestion, created] = await BatchPracticeQuestion.findOrCreate({
-//           where: {
-//             batch_id: batch_id,
-//             coding_question_id: codingQuestionId,
-//           },
-//           defaults: {
-//             created_by: req.user.id, // Assuming req.user.id holds the admin's ID
-//           },
-//         });
-
-//         // Log the result of each insert
-//         if (created) {
-//           console.log(`Coding Question ID ${codingQuestionId} added to batch ${batch_id}`);
-//         } else {
-//           console.log(`Coding Question ID ${codingQuestionId} already exists in batch ${batch_id}`);
-//         }
-//       }
-//     }
-
-//     // Process MCQ Questions
-//     if (mcq_question_ids && mcq_question_ids.length > 0) {
-//       for (let mcqQuestionId of mcq_question_ids) {
-//         // Log each MCQ question ID being processed
-//         console.log('Processing MCQ Question ID:', mcqQuestionId);
-
-//         const [batchPracticeQuestion, created] = await BatchPracticeQuestion.findOrCreate({
-//           where: {
-//             batch_id: batch_id,
-//             mcq_question_id: mcqQuestionId,
-//           },
-//           defaults: {
-//             created_by: req.user.id,
-//           },
-//         });
-
-//         // Log the result of each insert
-//         if (created) {
-//           console.log(`MCQ Question ID ${mcqQuestionId} added to batch ${batch_id}`);
-//         } else {
-//           console.log(`MCQ Question ID ${mcqQuestionId} already exists in batch ${batch_id}`);
-//         }
-//       }
-//     }
-
-//     res.status(201).json({ message: 'Questions added to batch successfully' });
-
-//   } catch (error) {
-//     // Log the error
-//     console.error('Error adding questions to batch:', error);
-//     res.status(500).json({ message: 'Error adding questions to batch', error });
-//   }
-// };
-
-
-// // Add questions (both coding and MCQ) to a batch
-// exports.addQuestionsToBatch = async (req, res) => {
-//   const { batch_id } = req.params;
-//   const { coding_question_ids, mcq_question_ids } = req.body;
-
-//   try {
-//     // Initialize an array to store all questions to be added
-//     let questionsToAdd = [];
-
-//     // Process Coding Questions
-//     if (coding_question_ids && coding_question_ids.length > 0) {
-//       for (let coding_question_id of coding_question_ids) {
-//         const codingQuestion = await CodingQuestion.findOne({
-//           where: { id: coding_question_id, approval_status: 'approved' }
-//         });
-
-//         if (codingQuestion) {
-//           questionsToAdd.push({
-//             batch_id,
-//             coding_question_id: codingQuestion.id,
-//             created_by: req.user.id  // Assuming admin or authorized user
-//           });
-//         }
-//       }
-//     }
-
-//     // Process MCQ Questions
-//     if (mcq_question_ids && mcq_question_ids.length > 0) {
-//       for (let mcq_question_id of mcq_question_ids) {
-//         const mcqQuestion = await MCQQuestion.findOne({
-//           where: { id: mcq_question_id, approval_status: 'approved' }
-//         });
-
-//         if (mcqQuestion) {
-//           questionsToAdd.push({
-//             batch_id,
-//             mcq_question_id: mcqQuestion.id,
-//             created_by: req.user.id
-//           });
-//         }
-//       }
-//     }
-
-//     // Bulk insert questions to BatchPracticeQuestions
-//     if (questionsToAdd.length > 0) {
-//       await BatchPracticeQuestion.bulkCreate(questionsToAdd);
-//       res.status(201).json({ message: 'Questions added to batch successfully' });
-//     } else {
-//       res.status(400).json({ message: 'No approved questions to add to batch' });
-//     }
-
-//   } catch (error) {
-//     console.error('Error adding questions to batch:', error);
-//     res.status(500).json({ message: 'Error adding questions to batch', error });
-//   }
-// };
-
-
-
-// exports.addQuestionsToBatch = async (req, res) => {
-//   const { batch_id } = req.params; // Get batch_id from URL
-//   const { coding_question_ids, mcq_question_ids } = req.body; // Get question IDs from the body
-
-//   try {
-//     // Validate coding questions
-//     if (coding_question_ids && coding_question_ids.length > 0) {
-//       for (let questionId of coding_question_ids) {
-//         const codingQuestion = await CodingQuestion.findByPk(questionId);
-
-//         // Ensure the question exists and is of type 'practice'
-//         if (!codingQuestion || codingQuestion.question_type !== 'practice') {
-//           return res.status(400).json({ message: `Coding question ID ${questionId} is either not found or is not a practice question.` });
-//         }
-
-//         // Add to BatchPracticeQuestion table
-//         await BatchPracticeQuestion.findOrCreate({
-//           where: { batch_id, coding_question_id: questionId },
-//           defaults: { created_by: req.user.id }
-//         });
-//       }
-//     }
-
-//     // Validate MCQ questions
-//     if (mcq_question_ids && mcq_question_ids.length > 0) {
-//       for (let questionId of mcq_question_ids) {
-//         const mcqQuestion = await MCQQuestion.findByPk(questionId);
-
-//         // Ensure the question exists and is of type 'practice'
-//         if (!mcqQuestion || mcqQuestion.question_type !== 'practice') {
-//           return res.status(400).json({ message: `MCQ question ID ${questionId} is either not found or is not a practice question.` });
-//         }
-
-//         // Add to BatchPracticeQuestion table
-//         await BatchPracticeQuestion.findOrCreate({
-//           where: { batch_id, mcq_question_id: questionId },
-//           defaults: { created_by: req.user.id }
-//         });
-//       }
-//     }
-
-//     res.status(201).json({ message: 'Questions added to batch successfully' });
-//   } catch (error) {
-//     console.error('Error adding questions to batch:', error);
-//     res.status(500).json({ message: 'Error adding questions to batch', error });
-//   }
-// };
 
 
 // Controller to create a new assessment
@@ -1342,35 +720,6 @@ exports.deleteAssessment = async (req, res) => {
   }
 };
 
-
-// Controller to create an assessment round
-// exports.createAssessmentRound = async (req, res) => {
-//   try {
-//     const { assessment_id, round_type, round_order } = req.body;
-//     const adminId = req.user.id;  // Assuming admin authentication provides admin ID
-
-//     // Check if the assessment exists
-//     const assessment = await Assessment.findByPk(assessment_id);
-//     if (!assessment) {
-//       return res.status(404).json({ message: 'Assessment not found' });
-//     }
-
-//     // Create a new assessment round
-//     const assessmentRound = await AssessmentRound.create({
-//       assessment_id,
-//       round_type,
-//       created_by: adminId
-//     });
-
-//     res.status(201).json({
-//       message: 'Assessment round created successfully',
-//       assessmentRound
-//     });
-//   } catch (error) {
-//     console.error('Error creating assessment round:', error);
-//     res.status(500).json({ message: 'Error creating assessment round', error });
-//   }
-// };
 
 
 exports.createAssessmentRound = async (req, res) => {
@@ -1644,504 +993,6 @@ exports.getAllAssessments = async (req, res) => {
 
 
 
-
-// // Fetch MCQ Questions by Domain
-// exports.getMCQQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-
-//     // Fetch all MCQ questions that belong to the specified domain
-//     const mcqQuestions = await MCQQuestion.findAll({
-//       where: { mcqdomain_id: domain_id },
-//       include: [
-//         {
-//           model: MCQDomain,
-//           attributes: ['name'], // Include domain name in the response
-//         },
-//         {
-//           model: Trainer, // Assuming a Trainer model exists to track who created the question
-//           attributes: ['name'], // Include trainer name
-//         },
-//       ],
-//     });
-
-//     if (!mcqQuestions || mcqQuestions.length === 0) {
-//       return res.status(404).json({ message: 'No MCQ Questions found for this domain' });
-//     }
-
-//     res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions });
-//   } catch (error) {
-//     console.error('Error fetching MCQ Questions:', error);
-//     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
-//   }
-// };
-
-
-// // Fetch Coding Questions by Domain
-// exports.getCodingQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-
-//     // Fetch all Coding questions that belong to the specified domain
-//     const codingQuestions = await CodingQuestion.findAll({
-//       where: { codingquestiondomain_id: domain_id },
-//       include: [
-//         {
-//           model: CodingQuestionDomain,
-//           attributes: ['name'], // Include domain name in the response
-//         },
-//         {
-//           model: Trainer, // Assuming a Trainer model exists to track who created the question
-//           attributes: ['name'], // Include trainer name
-//         },
-//       ],
-//     });
-
-//     if (!codingQuestions || codingQuestions.length === 0) {
-//       return res.status(404).json({ message: 'No Coding Questions found for this domain' });
-//     }
-
-//     res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions });
-//   } catch (error) {
-//     console.error('Error fetching Coding Questions:', error);
-//     res.status(500).json({ message: 'Error fetching Coding Questions', error });
-//   }
-// };
-
-
-
-// // Fetch MCQ Questions by Domain
-// exports.getMCQQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-
-//     // Fetch all MCQ questions that belong to the specified domain
-//     const mcqQuestions = await MCQQuestion.findAll({
-//       where: { mcqdomain_id: domain_id },
-//       include: [
-//         {
-//           model: MCQDomain,
-//           attributes: ['name'], // Include domain name in the response
-//         },
-//         {
-//           model: Trainer, // Assuming a Trainer model exists to track who created the question
-//           attributes: ['name'], // Include trainer name
-//         },
-//       ],
-//     });
-
-//     if (!mcqQuestions || mcqQuestions.length === 0) {
-//       return res.status(404).json({ message: 'No MCQ Questions found for this domain' });
-//     }
-
-//     res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions });
-//   } catch (error) {
-//     console.error('Error fetching MCQ Questions:', error);
-//     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
-//   }
-// };
-
-
-// Fetch MCQ Questions by Domain
-// exports.getMCQQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-
-//     // Fetch all MCQ questions that belong to the specified domain
-//     const mcqQuestions = await MCQQuestion.findAll({
-//       where: { mcqdomain_id: domain_id },
-//     });
-
-//     if (!mcqQuestions || mcqQuestions.length === 0) {
-//       return res.status(404).json({ message: 'No MCQ Questions found for this domain' });
-//     }
-
-//     res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions });
-//   } catch (error) {
-//     console.error('Error fetching MCQ Questions:', error);
-//     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
-//   }
-// };
-
-
-// exports.getMCQQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-
-//     // Fetch all MCQ questions that belong to the specified domain
-//     const mcqQuestions = await MCQQuestion.findAll({
-//       where: { mcqdomain_id: domain_id },
-//     });
-
-//     // If no questions are found, respond with an empty array
-//     if (!mcqQuestions) {
-//       return res.status(200).json({ message: 'No MCQ Questions found for this domain', mcqQuestions: [] });
-//     }
-
-//     res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions });
-//   } catch (error) {
-//     console.error('Error fetching MCQ Questions:', error);
-//     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
-//   }
-// };
-
-
-// exports.getMCQQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-//     const { student_id } = req.query; // assuming student_id is passed as a query parameter
-
-//     // Fetch all MCQ questions that belong to the specified domain
-//     const mcqQuestions = await MCQQuestion.findAll({
-//       where: { mcqdomain_id: domain_id },
-//       attributes: [
-//         'id', 'title', 'options', 'correct_answers', 'is_single_answer',
-//         'mcqdomain_id', 'code_snippets', 'question_type', 'approval_status',
-//         'created_by', 'difficulty', 'round_id', 'createdAt', 'updatedAt'
-//       ],
-//       raw: true // Fetches plain data objects for easy manipulation
-//     });
-
-//     // Fetch StudentMcqAnswer data for each question for the specified student
-//     const studentAnswers = await StudentMcqAnswer.findAll({
-//       where: { student_id: student_id, domain_id: domain_id },
-//       attributes: [
-//         'question_id', 'submitted_options', 'is_attempted', 'points', 
-//         'marked', 'is_reported', 'reported_text'
-//       ],
-//       raw: true
-//     });
-
-//     // Map student answers to their respective question IDs for easy lookup
-//     const studentAnswersMap = studentAnswers.reduce((map, answer) => {
-//       map[answer.question_id] = answer;
-//       return map;
-//     }, {});
-
-//     // Combine MCQ question data with StudentMcqAnswer data
-//     const combinedData = mcqQuestions.map((question) => {
-//       // Find if there is a corresponding student answer for the question
-//       const studentAnswer = studentAnswersMap[question.id] || {};
-
-//       return {
-//         ...question,
-//         submitted_options: studentAnswer.submitted_options || null,
-//         is_attempted: studentAnswer.is_attempted || false,
-//         points: studentAnswer.points || 0,
-//         marked: studentAnswer.marked || false,
-//         is_reported: studentAnswer.is_reported || false,
-//         reported_text: studentAnswer.reported_text || null,
-//       };
-//     });
-
-//     res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions: combinedData });
-//   } catch (error) {
-//     console.error('Error fetching MCQ Questions:', error);
-//     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
-//   }
-// };
-
-
-// exports.getMCQQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-//     const { student_id } = req.query; // assuming student_id is passed as a query parameter
-
-//     // Fetch all MCQ questions for the specified domain
-//     const mcqQuestions = await MCQQuestion.findAll({
-//       where: { mcqdomain_id: domain_id },
-//       attributes: [
-//         'id', 'title', 'options', 'correct_answers', 'is_single_answer',
-//         'mcqdomain_id', 'code_snippets', 'question_type', 'approval_status',
-//         'created_by', 'difficulty', 'round_id', 'createdAt', 'updatedAt'
-//       ],
-//       raw: true // Fetches plain data objects for easy manipulation
-//     });
-
-//     // Fetch StudentMcqAnswer data for the specified student and domain
-//     const studentAnswers = await StudentMcqAnswer.findAll({
-//       where: { student_id: student_id, domain_id: domain_id },
-//       attributes: [
-//         'question_id', 'submitted_options', 'is_attempted', 'points', 
-//         'marked', 'is_reported', 'reported_text'
-//       ],
-//       raw: true
-//     });
-
-//     // Map student answers to their respective question IDs for quick lookup
-//     const studentAnswersMap = studentAnswers.reduce((map, answer) => {
-//       map[answer.question_id] = answer;
-//       return map;
-//     }, {});
-
-//     // Combine MCQ question data with StudentMcqAnswer data and default values where missing
-//     const combinedData = mcqQuestions.map((question) => {
-//       // Find corresponding student answer or use default values if none exists
-//       const studentAnswer = studentAnswersMap[question.id] || {
-//         submitted_options: null,
-//         is_attempted: false,
-//         points: 0,
-//         marked: false,
-//         is_reported: false,
-//         reported_text: null,
-//       };
-
-//       return {
-//         ...question,
-//         submitted_options: studentAnswer.submitted_options,
-//         is_attempted: studentAnswer.is_attempted,
-//         points: studentAnswer.points,
-//         marked: studentAnswer.marked,
-//         is_reported: studentAnswer.is_reported,
-//         reported_text: studentAnswer.reported_text,
-//       };
-//     });
-
-//     res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions: combinedData });
-//   } catch (error) {
-//     console.error('Error fetching MCQ Questions:', error);
-//     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
-//   }
-// };
-
-
-
-// Fetch Coding Questions by Domain
-// exports.getCodingQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-
-//     // Fetch all Coding questions that belong to the specified domain
-//     const codingQuestions = await CodingQuestion.findAll({
-//       where: { codingquestiondomain_id: domain_id },
-//     });
-
-//     if (!codingQuestions || codingQuestions.length === 0) {
-//       return res.status(404).json({ message: 'No Coding Questions found for this domain' });
-//     }
-
-//     res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions });
-//   } catch (error) {
-//     console.error('Error fetching Coding Questions:', error);
-//     res.status(500).json({ message: 'Error fetching Coding Questions', error });
-//   }
-// };
-// exports.getCodingQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-
-//     // Fetch all Coding questions that belong to the specified domain, including solutions
-//     const codingQuestions = await CodingQuestion.findAll({
-//       where: { codingquestiondomain_id: domain_id },
-//       include: [
-//         {
-//           model: Solution,
-//           as: 'solutions',
-//           attributes: ['language', 'code', 'youtube_link'], // Select specific fields from solutions
-//         },
-//       ],
-//     });
-
-//     if (!codingQuestions || codingQuestions.length === 0) {
-//       return res.status(404).json({ message: 'No Coding Questions found for this domain' });
-//     }
-
-//     res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions });
-//   } catch (error) {
-//     console.error('Error fetching Coding Questions:', error);
-//     res.status(500).json({ message: 'Error fetching Coding Questions', error });
-//   }
-// };
-
-
-// exports.getCodingQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-
-    // Fetch CodingQuestions with all relevant fields, including solutions
-    // const codingQuestions = await CodingQuestion.findAll({
-    //   where: { codingquestiondomain_id: domain_id },
-    //   attributes: [
-    //     'id', 'title', 'description', 'input_format', 'output_format',
-    //     'test_cases', 'constraints', 'difficulty', 'allowed_languages', 'solutions'
-    //   ]
-    // });
-
-//     const codingQuestions = await CodingQuestion.findAll({
-//       where: { codingquestiondomain_id: domain_id },
-//       attributes: [
-//         'id', 'title', 'description', 'input_format', 'output_format',
-//         'test_cases', 'constraints', 'difficulty', 'allowed_languages', 'solutions'
-//       ]
-//     });
-    
-
-//     codingQuestions.forEach((question) => {
-//       console.log(`Question ID: ${question.id}, Solutions:`, question.solutions);
-//     });
-
-//     if (!codingQuestions || codingQuestions.length === 0) {
-//       return res.status(404).json({ message: 'No Coding Questions found for this domain' });
-//     }
-
-//     res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions });
-//   } catch (error) {
-//     console.error('Error fetching Coding Questions:', error);
-//     res.status(500).json({ message: 'Error fetching Coding Questions', error });
-//   }
-// };
-
-
-// exports.getCodingQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-
-//     // Fetch all Coding questions that belong to the specified domain
-//     const codingQuestions = await CodingQuestion.findAll({
-//       where: { codingquestiondomain_id: domain_id },
-//       attributes: [
-//         'id', 'title', 'description', 'input_format', 'output_format',
-//         'test_cases', 'constraints', 'difficulty', 'allowed_languages', 'solutions'
-//       ]
-//     });
-
-//     // Log each question's solutions and debug if missing
-//     codingQuestions.forEach((question) => {
-//       if (!question.solutions || question.solutions.length === 0) {
-//         console.log(`Question ID ${question.id} has no solutions or is empty.`);
-//       } else {
-//         console.log(`Question ID ${question.id} solutions:`, question.solutions);
-//       }
-//     });
-
-//     codingQuestions.forEach((question) => {
-//       if (!question.solutions || question.solutions.length === 0) {
-//         console.log(`Question ID ${question.id} has no solutions or is empty.`);
-//       } else {
-//         console.log(`Question ID ${question.id} solutions:`, question.solutions);
-//       }
-//     });
-
-
-//     res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions });
-//   } catch (error) {
-//     console.error('Error fetching Coding Questions:', error);
-//     res.status(500).json({ message: 'Error fetching Coding Questions', error });
-//   }
-// }
-
-
-
-// exports.getCodingQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-
-//     // Fetch all Coding questions that belong to the specified domain
-//     const codingQuestions = await CodingQuestion.findAll({
-//       where: { codingquestiondomain_id: domain_id,approval_status: 'approved',question_type: 'practice' },
-//       attributes: [
-//         'id', 'title', 'description', 'input_format', 'output_format',
-//         'test_cases', 'constraints', 'difficulty', 'allowed_languages', 'solutions'
-//       ]
-//     });
-
-//     // Check if the result is null or an empty array
-//     if (codingQuestions === null) {
-//       // This would indicate something went wrong (e.g., invalid query)
-//       return res.status(500).json({ message: 'Error fetching coding questions for this domain' });
-//     } else if (codingQuestions.length === 0) {
-//       // This means the query was successful but no questions were found
-//       return res.status(204).json({ message: 'No coding questions found for this domain', codingQuestions: [] });
-//     }
-
-//     // Log each question's solutions for debugging if needed
-//     codingQuestions.forEach((question) => {
-//       if (!question.solutions || question.solutions.length === 0) {
-//         console.log(`Question ID ${question.id} has no solutions or is empty.`);
-//       } else {
-//         console.log(`Question ID ${question.id} solutions:`, question.solutions);
-//       }
-//     });
-
-//     // Return the found coding questions
-//     res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions });
-//   } catch (error) {
-//     console.error('Error fetching Coding Questions:', error);
-//     res.status(500).json({ message: 'Error fetching Coding Questions', error });
-//   }
-// };
-
-
-// controllers/studentController.js
-// const { CodingQuestion, StudentSubmission } = require('../models');
-
-
-
-// exports.getCodingQuestionsByDomain = async (req, res) => {
-//     try {
-//         const { domain_id } = req.params;
-//         const { student_id } = req.query;
-
-//         // Fetch all Coding questions that belong to the specified domain
-//         const codingQuestions = await CodingQuestion.findAll({
-//             where: { codingquestiondomain_id: domain_id, approval_status: 'approved', question_type: 'practice' },
-//             attributes: [
-//                 'id', 'title', 'description', 'input_format', 'output_format',
-//                 'test_cases', 'constraints', 'difficulty', 'allowed_languages', 'solutions'
-//             ]
-//         });
-
-//         if (!codingQuestions || codingQuestions.length === 0) {
-//             return res.status(204).json({ message: 'No coding questions found for this domain', codingQuestions: [] });
-//         }
-
-//         // Fetch student's submission details for each question in the specified domain
-//         const questionIds = codingQuestions.map(q => q.id);
-//         const studentSubmissions = await StudentSubmission.findAll({
-//             where: {
-//                 student_id: student_id,
-//                 domain_id: domain_id,
-//                 question_id: questionIds
-//             },
-//             attributes: ['question_id', 'score', 'status', 'language', 'solution_code', 'question_points', 'is_reported', 'report_text']
-//         });
-
-//         // Organize submissions by question ID for easy lookup
-//         const submissionMap = studentSubmissions.reduce((acc, submission) => {
-//             acc[submission.question_id] = submission;
-//             return acc;
-//         }, {});
-
-//         // Add submission details to each question object
-//         const responseQuestions = codingQuestions.map(question => ({
-//             id: question.id,
-//             title: question.title,
-//             description: question.description,
-//             input_format: question.input_format,
-//             output_format: question.output_format,
-//             test_cases: question.test_cases,
-//             constraints: question.constraints,
-//             difficulty: question.difficulty,
-//             allowed_languages: question.allowed_languages,
-//             solutions: question.solutions,
-//             // Additional fields from StudentSubmission
-//             score: submissionMap[question.id]?.score || null,
-//             status: submissionMap[question.id]?.status || 'not_attempted',
-//             language: submissionMap[question.id]?.language || null,
-//             solution_code: submissionMap[question.id]?.solution_code || null,
-//             question_points: submissionMap[question.id]?.question_points || null,
-//             is_reported: submissionMap[question.id]?.is_reported || false,
-//             report_text: submissionMap[question.id]?.report_text || null
-//         }));
-
-//         // Return the found coding questions with submission details
-//         res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions: responseQuestions });
-//     } catch (error) {
-//         console.error('Error fetching Coding Questions:', error);
-//         res.status(500).json({ message: 'Error fetching Coding Questions', error });
-//     }
-// };
-
 exports.getCodingQuestionsByDomain = async (req, res) => {
   try {
       const { domain_id } = req.params;
@@ -2207,137 +1058,6 @@ exports.getCodingQuestionsByDomain = async (req, res) => {
   }
 };
 
-
-
-// exports.getMCQQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-//     const { student_id } = req.user.student_id;
-
-//     // Validate that student_id is provided
-//     if (!student_id) {
-//       return res.status(400).json({ message: 'student_id is required' });
-//     }
-
-//     // Fetch all MCQ questions for the specified domain
-//     const mcqQuestions = await MCQQuestion.findAll({
-//       where: { mcqdomain_id: domain_id },
-//       attributes: [
-//         'id', 'title', 'options', 'correct_answers', 'is_single_answer',
-//         'mcqdomain_id', 'code_snippets', 'question_type', 'approval_status',
-//         'created_by', 'difficulty', 'round_id', 'createdAt', 'updatedAt'
-//       ],
-//       raw: true
-//     });
-
-//     // Fetch StudentMcqAnswer data for the specified student and domain
-//     const studentAnswers = await StudentMcqAnswer.findAll({
-//       where: { student_id: student_id, domain_id: domain_id },
-//       attributes: [
-//         'question_id', 'submitted_options', 'is_attempted', 'points', 
-//         'marked', 'is_reported', 'reported_text'
-//       ],
-//       raw: true
-//     });
-
-//     // Map student answers to their respective question IDs for quick lookup
-//     const studentAnswersMap = studentAnswers.reduce((map, answer) => {
-//       map[answer.question_id] = answer;
-//       return map;
-//     }, {});
-
-//     // Combine MCQ question data with StudentMcqAnswer data and default values where missing
-//     const combinedData = mcqQuestions.map((question) => {
-//       // Find corresponding student answer or use default values if none exists
-//       const studentAnswer = studentAnswersMap[question.id] || {
-//         submitted_options: null,
-//         is_attempted: false,
-//         points: 0,
-//         marked: false,
-//         is_reported: false,
-//         reported_text: null,
-//       };
-
-//       return {
-//         ...question,
-//         submitted_options: studentAnswer.submitted_options,
-//         is_attempted: studentAnswer.is_attempted,
-//         points: studentAnswer.points,
-//         marked: studentAnswer.marked,
-//         is_reported: studentAnswer.is_reported,
-//         reported_text: studentAnswer.reported_text,
-//       };
-//     });
-
-//     res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions: combinedData });
-//   } catch (error) {
-//     console.error('Error fetching MCQ Questions:', error);
-//     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
-//   }
-// };
-
-
-// exports.getMCQQuestionsByDomain = async (req, res) => {
-//   try {
-//     const { domain_id } = req.params;
-//     const student_id = req.user.student_id; // Extract student_id from req.user set by JWT middleware
-
-//     // Fetch all MCQ questions for the specified domain
-//     const mcqQuestions = await MCQQuestion.findAll({
-//       where: { mcqdomain_id: domain_id },
-//       attributes: [
-//         'id', 'title', 'options', 'correct_answers', 'is_single_answer',
-//         'mcqdomain_id', 'code_snippets', 'question_type', 'approval_status',
-//         'created_by', 'difficulty', 'round_id', 'createdAt', 'updatedAt'
-//       ],
-//       raw: true
-//     });
-
-//     // Fetch StudentMcqAnswer data for the specified student and domain
-//     const studentAnswers = await StudentMcqAnswer.findAll({
-//       where: { student_id: student_id, domain_id: domain_id },
-//       attributes: [
-//         'question_id', 'submitted_options', 'is_attempted', 'points', 
-//         'marked', 'is_reported', 'reported_text'
-//       ],
-//       raw: true
-//     });
-
-//     // Map student answers to their respective question IDs for quick lookup
-//     const studentAnswersMap = studentAnswers.reduce((map, answer) => {
-//       map[answer.question_id] = answer;
-//       return map;
-//     }, {});
-
-//     // Combine MCQ question data with StudentMcqAnswer data and default values where missing
-//     const combinedData = mcqQuestions.map((question) => {
-//       // Find corresponding student answer or use default values if none exists
-//       const studentAnswer = studentAnswersMap[question.id] || {
-//         submitted_options: null,
-//         is_attempted: false,
-//         points: 0,
-//         marked: false,
-//         is_reported: false,
-//         reported_text: null,
-//       };
-
-//       return {
-//         ...question,
-//         submitted_options: studentAnswer.submitted_options,
-//         is_attempted: studentAnswer.is_attempted,
-//         points: studentAnswer.points,
-//         marked: studentAnswer.marked,
-//         is_reported: studentAnswer.is_reported,
-//         reported_text: studentAnswer.reported_text,
-//       };
-//     });
-
-//     res.status(200).json({ message: 'MCQ Questions fetched successfully', mcqQuestions: combinedData });
-//   } catch (error) {
-//     console.error('Error fetching MCQ Questions:', error);
-//     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
-//   }
-// };
 
 exports.getMCQQuestionsByDomain = async (req, res) => {
   try {
@@ -2405,5 +1125,112 @@ exports.getMCQQuestionsByDomain = async (req, res) => {
   } catch (error) {
     console.error('Error fetching MCQ Questions:', error);
     res.status(500).json({ message: 'Error fetching MCQ Questions', error });
+  }
+};
+
+
+
+exports.updateCodingQuestionsDomain = async (req, res) => {
+  try {
+    const { question_ids, codingquestiondomain_id } = req.body; // Extract question IDs and new domain ID from request body
+
+    // Check if both question_ids and codingquestiondomain_id are provided
+    if (!question_ids || !Array.isArray(question_ids) || question_ids.length === 0) {
+      return res.status(400).json({ message: 'Invalid or empty question IDs array' });
+    }
+
+    if (!codingquestiondomain_id) {
+      return res.status(400).json({ message: 'Coding question domain ID is required' });
+    }
+
+    // Update all coding questions with the provided IDs
+    const updatedCount = await CodingQuestion.update(
+      { codingquestiondomain_id }, // New domain ID to set
+      { where: { id: question_ids } } // Filter questions by their IDs
+    );
+
+    // If no questions were updated, return an error
+    if (updatedCount[0] === 0) {
+      return res.status(404).json({ message: 'No matching coding questions found to update' });
+    }
+
+    res.status(200).json({
+      message: 'Coding questions updated successfully',
+      updatedCount: updatedCount[0], // Number of updated records
+    });
+  } catch (error) {
+    console.error('Error updating coding questions domain:', error); // Log the error for debugging
+    res.status(500).json({
+      message: 'Error updating coding questions domain',
+      error: error.message || error,
+    });
+  }
+};
+
+
+
+// Fetch Child MCQ Domains
+exports.getmcqChildDomains = async (req, res) => {
+  try {
+    const { parent_id } = req.params; // Get the parent_id from route parameters
+
+    // Fetch all MCQ domains where the parent_id matches the provided ID
+    const childDomains = await MCQDomain.findAll({
+      where: { parent_id }, // Sequelize query to filter by parent_id
+    });
+
+    if (childDomains.length === 0) {
+      return res.status(200).json({
+        message: 'No child domains found for the provided parent ID',
+        childDomains: [],
+      });
+    }
+
+    res.status(200).json({
+      message: 'Child MCQ domains fetched successfully',
+      childDomains,
+    });
+  } catch (error) {
+    console.error('Error fetching child MCQ domains:', error);
+    res.status(500).json({ message: 'Error fetching child MCQ domains', error });
+  }
+};
+
+
+
+exports.updateMCQQuestionsDomain = async (req, res) => {
+  try {
+    const { question_ids, mcqdomain_id } = req.body; // Extract question IDs and new domain ID from request body
+
+    // Validate input
+    if (!question_ids || !Array.isArray(question_ids) || question_ids.length === 0) {
+      return res.status(400).json({ message: 'Invalid or empty question IDs array' });
+    }
+
+    if (!mcqdomain_id) {
+      return res.status(400).json({ message: 'MCQ Domain ID is required' });
+    }
+
+    // Update all MCQ questions with the provided IDs
+    const updatedCount = await MCQQuestion.update(
+      { mcqdomain_id }, // New domain ID to set
+      { where: { id: question_ids } } // Filter questions by their IDs
+    );
+
+    // If no questions were updated, return an error
+    if (updatedCount[0] === 0) {
+      return res.status(404).json({ message: 'No matching MCQ questions found to update' });
+    }
+
+    res.status(200).json({
+      message: 'MCQ questions updated successfully',
+      updatedCount: updatedCount[0], // Number of updated records
+    });
+  } catch (error) {
+    console.error('Error updating MCQ questions domain:', error); // Log the error for debugging
+    res.status(500).json({
+      message: 'Error updating MCQ questions domain',
+      error: error.message || error,
+    });
   }
 };

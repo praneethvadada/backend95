@@ -30,6 +30,8 @@ router.post('/add-language', verifyAdmin, adminController.addLanguage);
 
 router.get('/mcq-domains', adminController.getAllMCQDomains);
 router.get('/coding-domains', adminController.getAllCodingDomains);
+router.get('/child-coding-domains/:parent_id', adminController.getcodingChildDomains);
+router.get('/child-mcq-domains/:parent_id', adminController.getmcqChildDomains);
 
 
 
@@ -44,9 +46,11 @@ router.delete('/delete-coding-domain/:id', verifyAdmin, adminController.deleteCo
 
 
 
+router.get('/coding-questions/domain/:domain_id',verifyAdmin, adminController.getCodingQuestionsByDomain);
 
 
 
+router.post('/edit-mcqdomainid-mcq-questions',verifyAdmin, adminController.updateMCQQuestionsDomain);
 
 
 
@@ -89,6 +93,7 @@ router.get('/pending-coding-questions', verifyAdmin, adminController.getAllPendi
 router.get('/pending-mcq-questions', verifyAdmin, adminController.getAllPendingMCQQuestions);
 
 
+
 router.get('/admin-coding-question/:question_id', verifyAdmin, adminController.getCodingQuestionById);
 router.get('/admin-mcq-question/:question_id', verifyAdmin, adminController.getMCQQuestionById);
 
@@ -107,5 +112,6 @@ router.get('/mcq-questions/domain/:domain_id', verifyAdmin, adminController.getM
 router.get('/coding-questions/domain/:domain_id',verifyAdmin,  adminController.getCodingQuestionsByDomain);
 
 
+router.post('/update-coding-question-domainid', verifyAdmin, adminController.updateCodingQuestionsDomain);
 
 module.exports = router;

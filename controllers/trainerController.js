@@ -606,6 +606,13 @@ exports.editRejectedCodingQuestionById = async (req, res) => {
   }
 };
 
+
+
+
+
+
+
+
 // Trainer edits a rejected MCQ question by ID
 exports.editRejectedMCQQuestionById = async (req, res) => {
   try {
