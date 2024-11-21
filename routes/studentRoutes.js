@@ -47,7 +47,7 @@ router.get('/coding-domains',verifyStudent, adminController.getAllCodingDomains)
 router.get('/mcq-questions/domain/:domain_id',verifyStudent,  adminController.getMCQQuestionsByDomain);
 router.get('/coding-questions/domain/:domain_id',verifyStudent, adminController.getCodingQuestionsByDomain);
 //adminController.getCodingQuestionsByDomain
-router.get('/admin/coding-questions/domain/:domain_id',verifyAdmin, adminController.getCodingQuestionsByDomain);
+// router.get('/admin/coding-questions/domain/:domain_id',verifyAdmin, adminController.getCodingQuestionsByDomain);
 
 router.post('/practice-coding-question-submit',verifyStudent, studentController.submitCode);
 
