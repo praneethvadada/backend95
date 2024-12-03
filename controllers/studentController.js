@@ -1308,7 +1308,7 @@ exports.submitCode = async (req, res) => {
       test_results,
       question_points,
       mode, // Mode can be "run" or "submit"
-    } = req.body;
+    } = req.body;   
 
     if (!domain_id || !question_id || !language || !solution_code || !test_results || !mode || !question_points) {
       console.error("[DEBUG] Missing required fields");
