@@ -1537,15 +1537,285 @@ exports.getAllAssessments = async (req, res) => {
 
 
 
+// exports.getCodingQuestionsByDomain = async (req, res) => {
+//   try {
+//     const { domain_id } = req.params; // Extract domain ID from the request params
+//     const student_id = req.user.id; // Extract student ID from the JWT token
+
+//     // Debugging
+//     console.log(`[DEBUG] Fetching Coding Questions for Domain ID: ${domain_id} and Student ID: ${student_id}`);
+
+//     // Fetch all coding questions for the domain with approval and practice type
+//     const codingQuestions = await CodingQuestion.findAll({
+//       where: {
+//         codingquestiondomain_id: domain_id,
+//         approval_status: 'approved',
+//         question_type: 'practice',
+//       },
+//       attributes: [
+//         'id',
+//         'title',
+//         'description',
+//         'input_format',
+//         'output_format',
+//         'test_cases',
+//         'constraints',
+//         'difficulty',
+//         'allowed_languages',
+//         'solutions',
+//         'codingquestiondomain_id', // Include this field
+
+//       ],
+//     });
+//     // Handle no coding questions found
+//     if (!codingQuestions || codingQuestions.length === 0) {
+//       console.log(`[DEBUG] No Coding Questions found for Domain ID: ${domain_id}`);
+//       return res.status(204).json({
+//         message: 'No coding questions found for this domain',
+//         codingQuestions: [],
+//       });
+//     }
+
+//     console.log(`[DEBUG] Found ${codingQuestions.length} Coding Questions`);
+
+//     // Function to safely parse JSON fields
+//     const safeParseJSON = (input, fallback = []) => {
+//       try {
+//         return typeof input === 'string' ? JSON.parse(input) : input;
+//       } catch (error) {
+//         console.error(`[ERROR] Failed to parse JSON for input: ${input}`, error);
+//         return fallback;
+//       }
+//     };
+
+//     // Process each question: Parse fields and handle test cases, solutions, etc.
+//     const responseQuestions = codingQuestions.map((question) => {
+//       const parsedTestCases = safeParseJSON(question.test_cases).map((testCase) => ({
+//         ...testCase,
+//         input: String(testCase.input), // Ensure input is always a string
+//       }));
+//       const parsedAllowedLanguages = safeParseJSON(question.allowed_languages);
+//       const parsedSolutions = safeParseJSON(question.solutions);
+
+//       // Debug parsed fields
+//       console.log(`[DEBUG] Parsed Test Cases for Question ID ${question.id}:`, parsedTestCases);
+//       console.log(`[DEBUG] Parsed Allowed Languages for Question ID ${question.id}:`, parsedAllowedLanguages);
+//       console.log(`[DEBUG] Parsed Solutions for Question ID ${question.id}:`, parsedSolutions);
+
+//       return {
+//         ...question.toJSON(),
+//         test_cases: parsedTestCases,
+//         allowed_languages: parsedAllowedLanguages,
+//         solutions: parsedSolutions,
+//       };
+//     });
+
+//     // Fetch student submissions for these questions
+//     const questionIds = responseQuestions.map((q) => q.id);
+//     const studentSubmissions = await StudentSubmission.findAll({
+//       where: {
+//         student_id: student_id,
+//         domain_id: domain_id,
+//         question_id: questionIds,
+//       },
+//       attributes: [
+//         'question_id',
+//         'score',
+//         'status',
+//         'language',
+//         'solution_code',
+//         'question_points',
+//         'is_reported',
+//         'report_text',
+//       ],
+//     });
+
+//     console.log(`[DEBUG] Found ${studentSubmissions.length} Student Submissions`);
+//     // Create a map of submissions by question ID for easy lookup
+//     const submissionMap = studentSubmissions.reduce((acc, submission) => {
+//       acc[submission.question_id] = submission;
+//       return acc;
+//     }, {});
+
+//     // Enrich the questions with submission details
+//     const enrichedQuestions = responseQuestions.map((question) => ({
+//       ...question,
+//       score: submissionMap[question.id]?.score || null,
+//       status: submissionMap[question.id]?.status || 'not_attempted',
+//       language: submissionMap[question.id]?.language || null,
+//       solution_code: submissionMap[question.id]?.solution_code || null,
+//       question_points: submissionMap[question.id]?.question_points || null,
+//       is_reported: submissionMap[question.id]?.is_reported || false,
+//       report_text: submissionMap[question.id]?.report_text || null,
+//     }));
+
+//     // Debug enriched questions
+//     console.log(`[DEBUG] Enriched Questions:`, enrichedQuestions);
+
+//     // Return the enriched questions
+//     res.status(200).json({
+//       message: 'Coding Questions fetched successfully',
+//       codingQuestions: enrichedQuestions,
+//     });
+//   } catch (error) {
+//     console.error('[ERROR] Error fetching Coding Questions:', error);
+//     res.status(500).json({
+//       message: 'Error fetching Coding Questions',
+//       error: error.message,
+//     });
+//   }
+// };
+
+
+// exports.getCodingQuestionsByDomain = async (req, res) => {
+//   try {
+//     const { domain_id } = req.params;
+//     const student_id = req.user.id;
+
+//     const codingQuestions = await CodingQuestion.findAll({
+//       where: {
+//         codingquestiondomain_id: domain_id,
+//         approval_status: 'approved',
+//         question_type: 'practice',
+//       },
+//       attributes: [
+//         'id', 'title', 'description', 'input_format', 'output_format',
+//         'test_cases', 'constraints', 'difficulty', 'allowed_languages', 'solutions'
+//       ],
+//       include: [{
+//         model: StudentSubmission,
+//         as: 'submissions',
+//         where: { student_id: student_id },
+//         required: false, // Include questions without submissions
+//         attributes: ['score', 'status', 'language', 'solution_code', 'question_points', 'is_reported', 'report_text'],
+//       }]
+//     });
+
+//     if (!codingQuestions || codingQuestions.length === 0) {
+//       return res.status(204).json({ message: 'No coding questions found', codingQuestions: [] });
+//     }
+
+//     const enrichedQuestions = codingQuestions.map((question) => {
+//       const submission = question.submissions[0] || {};
+//       return {
+//         ...question.toJSON(),
+//         test_cases: JSON.parse(question.test_cases || '[]'),
+//         allowed_languages: JSON.parse(question.allowed_languages || '[]'),
+//         solutions: JSON.parse(question.solutions || '[]'),
+//         score: submission.score || null,
+//         status: submission.status || 'not_attempted',
+//         language: submission.language || null,
+//         solution_code: submission.solution_code || null,
+//         question_points: submission.question_points || null,
+//         is_reported: submission.is_reported || false,
+//         report_text: submission.report_text || null,
+//       };
+//     });
+
+//     res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions: enrichedQuestions });
+//   } catch (error) {
+//     console.error('[ERROR] Error fetching Coding Questions:', error);
+//     res.status(500).json({ message: 'Error fetching Coding Questions', error: error.message });
+//   }
+// };
+
+
+// exports.getCodingQuestionsByDomain = async (req, res) => {
+//   try {
+//     const { domain_id } = req.params;
+//     const student_id = req.user.id;
+
+//     // Query to fetch coding questions with submissions
+//     const query = `
+//       SELECT 
+//         cq.id AS question_id,
+//         cq.title,
+//         cq.description,
+//         cq.input_format,
+//         cq.output_format,
+//         cq.test_cases,
+//         cq.constraints,
+//         cq.difficulty,
+//         cq.allowed_languages,
+//         cq.solutions,
+//         ss.score,
+//         ss.status,
+//         ss.language,
+//         ss.solution_code,
+//         ss.question_points,
+//         ss.is_reported,
+//         ss.report_text
+//       FROM 
+//         codingquestions cq
+//       LEFT JOIN 
+//         student_submissions ss 
+//       ON 
+//         cq.id = ss.question_id AND ss.student_id = :student_id
+//       WHERE 
+//         cq.codingquestiondomain_id = :domain_id 
+//         AND cq.approval_status = 'approved' 
+//         AND cq.question_type = 'practice';
+//     `;
+
+//     // Execute the query
+//     const results = await sequelize.query(query, {
+//       replacements: { domain_id, student_id },
+//       type: sequelize.QueryTypes.SELECT,
+//     });
+
+//     if (!Array.isArray(results) || results.length === 0) {
+//       return res.status(204).json({ message: 'No coding questions found', codingQuestions: [] });
+//     }
+
+//     // Safe JSON parsing function
+//     const safeParseJSON = (input, fallback = []) => {
+//       try {
+//         return JSON.parse(input);
+//       } catch (error) {
+//         console.warn(`[WARNING] Invalid JSON detected, using fallback. Input: ${input}`);
+//         return fallback;
+//       }
+//     };
+
+//     // Parse JSON fields and build response
+//     const enrichedQuestions = results.map((row) => ({
+//       id: row.question_id,
+//       title: row.title,
+//       description: row.description,
+//       input_format: row.input_format,
+//       output_format: row.output_format,
+//       test_cases: safeParseJSON(row.test_cases || '[]'),
+//       constraints: row.constraints,
+//       difficulty: row.difficulty,
+//       allowed_languages: safeParseJSON(row.allowed_languages || '[]'),
+//       solutions: safeParseJSON(row.solutions || '[]'),
+//       score: row.score || null,
+//       status: row.status || 'not_attempted',
+//       language: row.language || null,
+//       solution_code: row.solution_code || null,
+//       question_points: row.question_points || null,
+//       is_reported: row.is_reported || false,
+//       report_text: row.report_text || null,
+//     }));
+
+//     return res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions: enrichedQuestions });
+//   } catch (error) {
+//     console.error('[ERROR] Error fetching Coding Questions:', error);
+//     res.status(500).json({ message: 'Error fetching Coding Questions', error: error.message });
+//   }
+// };
+
+
+
+
 exports.getCodingQuestionsByDomain = async (req, res) => {
   try {
-    const { domain_id } = req.params; // Extract domain ID from the request params
-    const student_id = req.user.id; // Extract student ID from the JWT token
+    const { domain_id } = req.params; // Extract domain ID from request params
+    const student_id = req.user.id; // Extract student ID from the user object
 
-    // Debugging
     console.log(`[DEBUG] Fetching Coding Questions for Domain ID: ${domain_id} and Student ID: ${student_id}`);
 
-    // Fetch all coding questions for the domain with approval and practice type
+    // Fetch coding questions for the given domain
     const codingQuestions = await CodingQuestion.findAll({
       where: {
         codingquestiondomain_id: domain_id,
@@ -1563,59 +1833,40 @@ exports.getCodingQuestionsByDomain = async (req, res) => {
         'difficulty',
         'allowed_languages',
         'solutions',
-        'codingquestiondomain_id', // Include this field
-
+        'codingquestiondomain_id',
       ],
     });
-    // Handle no coding questions found
+
     if (!codingQuestions || codingQuestions.length === 0) {
       console.log(`[DEBUG] No Coding Questions found for Domain ID: ${domain_id}`);
-      return res.status(204).json({
-        message: 'No coding questions found for this domain',
-        codingQuestions: [],
-      });
+      return res.status(204).json({ message: 'No coding questions found', codingQuestions: [] });
     }
 
     console.log(`[DEBUG] Found ${codingQuestions.length} Coding Questions`);
 
-    // Function to safely parse JSON fields
+    // Parse JSON fields safely
     const safeParseJSON = (input, fallback = []) => {
       try {
         return typeof input === 'string' ? JSON.parse(input) : input;
       } catch (error) {
-        console.error(`[ERROR] Failed to parse JSON for input: ${input}`, error);
+        console.error(`[ERROR] Failed to parse JSON:`, input);
         return fallback;
       }
     };
 
-    // Process each question: Parse fields and handle test cases, solutions, etc.
-    const responseQuestions = codingQuestions.map((question) => {
-      const parsedTestCases = safeParseJSON(question.test_cases).map((testCase) => ({
-        ...testCase,
-        input: String(testCase.input), // Ensure input is always a string
-      }));
-      const parsedAllowedLanguages = safeParseJSON(question.allowed_languages);
-      const parsedSolutions = safeParseJSON(question.solutions);
+    const responseQuestions = codingQuestions.map((question) => ({
+      ...question.toJSON(),
+      test_cases: safeParseJSON(question.test_cases),
+      allowed_languages: safeParseJSON(question.allowed_languages),
+      solutions: safeParseJSON(question.solutions),
+    }));
 
-      // Debug parsed fields
-      console.log(`[DEBUG] Parsed Test Cases for Question ID ${question.id}:`, parsedTestCases);
-      console.log(`[DEBUG] Parsed Allowed Languages for Question ID ${question.id}:`, parsedAllowedLanguages);
-      console.log(`[DEBUG] Parsed Solutions for Question ID ${question.id}:`, parsedSolutions);
-
-      return {
-        ...question.toJSON(),
-        test_cases: parsedTestCases,
-        allowed_languages: parsedAllowedLanguages,
-        solutions: parsedSolutions,
-      };
-    });
-
-    // Fetch student submissions for these questions
+    // Fetch student submissions for the retrieved questions
     const questionIds = responseQuestions.map((q) => q.id);
     const studentSubmissions = await StudentSubmission.findAll({
       where: {
-        student_id: student_id,
-        domain_id: domain_id,
+        student_id,
+        domain_id,
         question_id: questionIds,
       },
       attributes: [
@@ -1631,13 +1882,14 @@ exports.getCodingQuestionsByDomain = async (req, res) => {
     });
 
     console.log(`[DEBUG] Found ${studentSubmissions.length} Student Submissions`);
-    // Create a map of submissions by question ID for easy lookup
+
+    // Map submissions to their corresponding question IDs
     const submissionMap = studentSubmissions.reduce((acc, submission) => {
-      acc[submission.question_id] = submission;
+      acc[submission.question_id] = submission.toJSON();
       return acc;
     }, {});
 
-    // Enrich the questions with submission details
+    // Enrich coding questions with student submission details
     const enrichedQuestions = responseQuestions.map((question) => ({
       ...question,
       score: submissionMap[question.id]?.score || null,
@@ -1649,22 +1901,15 @@ exports.getCodingQuestionsByDomain = async (req, res) => {
       report_text: submissionMap[question.id]?.report_text || null,
     }));
 
-    // Debug enriched questions
     console.log(`[DEBUG] Enriched Questions:`, enrichedQuestions);
 
-    // Return the enriched questions
-    res.status(200).json({
-      message: 'Coding Questions fetched successfully',
-      codingQuestions: enrichedQuestions,
-    });
+    res.status(200).json({ message: 'Coding Questions fetched successfully', codingQuestions: enrichedQuestions });
   } catch (error) {
     console.error('[ERROR] Error fetching Coding Questions:', error);
-    res.status(500).json({
-      message: 'Error fetching Coding Questions',
-      error: error.message,
-    });
+    res.status(500).json({ message: 'Error fetching Coding Questions', error: error.message });
   }
 };
+
 
 
 

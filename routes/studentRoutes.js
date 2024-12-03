@@ -54,4 +54,6 @@ router.post('/practice-coding-question-submit',verifyStudent, studentController.
 router.post('/submit-answer', studentController.submitAnswer);
 router.post('/mark-question', studentController.toggleMarkQuestion);
 router.post('/report-question', studentController.reportQuestion);
+router.post('/auto-save-code',verifyStudent , studentController.saveCode);
+
 module.exports = router;

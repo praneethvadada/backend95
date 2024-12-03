@@ -849,69 +849,69 @@ exports.getCodingQuestionsByDomainForStudents = async (req, res) => {
 //     }
 // };
 
-exports.submitCode = async (req, res) => {
-  try {
-      const studentId = req.user.id;
-      const { domain_id, question_id, language, code, testcases, action } = req.body;
+// exports.submitCode = async (req, res) => {
+//   try {
+//       const studentId = req.user.id;
+//       const { domain_id, question_id, language, code, testcases, action } = req.body;
 
-      // Determine Docker endpoint based on language
-      let endpoint;
-      switch (language.toLowerCase()) {
-          case 'python': endpoint = 'http://localhost:8084/compile'; break;
-          case 'java': endpoint = 'http://localhost:8083/compile'; break;
-          case 'cpp': endpoint = 'http://localhost:8081/compile'; break;
-          case 'c': endpoint = 'http://localhost:8082/compile'; break;
-          default: return res.status(400).json({ message: "Unsupported language selected" });
-      }
+//       // Determine Docker endpoint based on language
+//       let endpoint;
+//       switch (language.toLowerCase()) {
+//           case 'python': endpoint = 'http://localhost:8084/compile'; break;
+//           case 'java': endpoint = 'http://localhost:8083/compile'; break;
+//           case 'cpp': endpoint = 'http://localhost:8081/compile'; break;
+//           case 'c': endpoint = 'http://localhost:8082/compile'; break;
+//           default: return res.status(400).json({ message: "Unsupported language selected" });
+//       }
 
-      if (action === "submit") {
-          const response = await axios.post(endpoint, { language, code, testcases }, { headers: { 'Content-Type': 'application/json' } });
-          const testResults = response.data;
+//       if (action === "submit") {
+//           const response = await axios.post(endpoint, { language, code, testcases }, { headers: { 'Content-Type': 'application/json' } });
+//           const testResults = response.data;
 
-          let passedTests = 0;
-          const totalTests = testResults.length;
-          testResults.forEach(result => { if (result.success) passedTests += 1; });
+//           let passedTests = 0;
+//           const totalTests = testResults.length;
+//           testResults.forEach(result => { if (result.success) passedTests += 1; });
 
-          const score = Math.round((passedTests / totalTests) * 100);
-          const status = score === 100 ? 'pass' : score === 0 ? 'fail' : 'partial';
+//           const score = Math.round((passedTests / totalTests) * 100);
+//           const status = score === 100 ? 'pass' : score === 0 ? 'fail' : 'partial';
 
-          const submission = await StudentSubmission.create({
-              student_id: studentId,
-              domain_id,
-              question_id,
-              score,
-              solution_code: code,
-              status,
-              question_points: 0,
-              language,
-              submitted_at: new Date(),
-              last_updated: new Date()
-          });
+//           const submission = await StudentSubmission.create({
+//               student_id: studentId,
+//               domain_id,
+//               question_id,
+//               score,
+//               solution_code: code,
+//               status,
+//               question_points: 0,
+//               language,
+//               submitted_at: new Date(),
+//               last_updated: new Date()
+//           });
 
-          return res.status(201).json({
-              message: 'Code submitted successfully',
-              submission,
-              testResults,
-              calculatedScore: `${score}%`,
-              finalStatus: status
-          });
-      } else {
-          await StudentSubmission.upsert({
-              student_id: studentId,
-              domain_id,
-              question_id,
-              solution_code: code,
-              status: "draft",
-              last_updated: new Date()
-          });
+//           return res.status(201).json({
+//               message: 'Code submitted successfully',
+//               submission,
+//               testResults,
+//               calculatedScore: `${score}%`,
+//               finalStatus: status
+//           });
+//       } else {
+//           await StudentSubmission.upsert({
+//               student_id: studentId,
+//               domain_id,
+//               question_id,
+//               solution_code: code,
+//               status: "draft",
+//               last_updated: new Date()
+//           });
 
-          return res.status(200).json({ message: 'Draft saved successfully' });
-      }
-  } catch (error) {
-      console.error("Error:", error);
-      res.status(500).json({ message: 'Error submitting or saving code', error: error.message });
-  }
-};
+//           return res.status(200).json({ message: 'Draft saved successfully' });
+//       }
+//   } catch (error) {
+//       console.error("Error:", error);
+//       res.status(500).json({ message: 'Error submitting or saving code', error: error.message });
+//   }
+// };
 
 
 
@@ -1012,5 +1012,681 @@ exports.reportQuestion = async (req, res) => {
   } catch (error) {
     console.error('Error reporting question:', error);
     res.status(500).json({ message: 'Error reporting question', error });
+  }
+};
+
+
+
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Received Body:", req.body);
+
+//     const studentId = req.user.id; // Extracted from JWT
+//     const {
+//       domain_id,
+//       question_id,
+//       language,
+//       solution_code,
+//       test_results,
+//     } = req.body;
+
+//     if (!domain_id || !question_id || !language || !solution_code || !test_results) {
+//       console.error("[DEBUG] Missing required fields");
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // Fetch question details
+//     const question = await CodingQuestion.findOne({ where: { id: question_id } });
+//     console.log("[DEBUG] Question Details:", question);
+
+//     if (!question) {
+//       console.error("[DEBUG] Question not found");
+//       return res.status(404).json({ message: "Question not found" });
+//     }
+
+//     // Calculate score
+//     const totalTests = test_results.length;
+//     const passedTests = test_results.filter((result) => result.success).length;
+
+//     // Normalize score to a percentage (0-100)
+//     const score = Math.round((passedTests / totalTests) * 100);
+
+//     // Determine status
+//     let status = "fail"; // Default to "fail"
+//     if (score === 100) status = "pass";
+//     else if (score > 0) status = "partial";
+
+//     console.log("[DEBUG] Calculated Score (percentage):", score);
+//     console.log("[DEBUG] Status:", status);
+
+//     // Insert submission record
+//     const submission = {
+//       student_id: studentId,
+//       domain_id,
+//       question_id,
+//       score,
+//       question_points: 100, // Hardcoded since questionPoints isn't needed anymore
+//       solution_code,
+//       status,
+//       language,
+//       is_reported: 0,
+//       report_text: null,
+//       submitted_at: new Date(),
+//       last_updated: new Date(),
+//     };
+
+//     console.log("[DEBUG] Submission Object:", submission);
+
+//     await StudentSubmission.create(submission);
+
+//     console.log("[DEBUG] Submission stored in DB");
+
+//     res.status(201).json({
+//       message: "Code submitted successfully",
+//       submission,
+//     });
+//   } catch (error) {
+//     console.error("[DEBUG] Error Submitting Code:", error);
+//     res.status(500).json({ message: "Error submitting code", error: error.message });
+//   }
+// };
+
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Received Body:", req.body);
+
+//     const studentId = req.user.id; // Extracted from JWT
+//     const {
+//       domain_id,
+//       question_id,
+//       language,
+//       solution_code,
+//       test_results,
+//     } = req.body;
+
+//     if (!domain_id || !question_id || !language || !solution_code || !test_results) {
+//       console.error("[DEBUG] Missing required fields");
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // Fetch question details
+//     const question = await CodingQuestion.findOne({ where: { id: question_id } });
+//     console.log("[DEBUG] Question Details:", question);
+
+//     if (!question) {
+//       console.error("[DEBUG] Question not found");
+//       return res.status(404).json({ message: "Question not found" });
+//     }
+
+//     // Calculate score
+//     const totalTests = test_results.length;
+//     const passedTests = test_results.filter((result) => result.success).length;
+
+//     // Normalize score to a percentage (0-100)
+//     const score = Math.round((passedTests / totalTests) * 100);
+
+//     // Determine status
+//     let status = "fail"; // Default to "fail"
+//     if (score === 100) status = "pass";
+//     else if (score > 0) status = "partial";
+
+//     console.log("[DEBUG] Calculated Score (percentage):", score);
+//     console.log("[DEBUG] Status:", status);
+
+//     // Check if a submission already exists for the student and question
+//     const existingSubmission = await StudentSubmission.findOne({
+//       where: {
+//         student_id: studentId,
+//         question_id,
+//       },
+//     });
+
+//     if (existingSubmission) {
+//       // Update the existing submission
+//       console.log("[DEBUG] Updating existing submission");
+//       await existingSubmission.update({
+//         domain_id,
+//         score,
+//         question_points: 100, // Hardcoded since questionPoints isn't dynamic
+//         solution_code,
+//         status,
+//         language,
+//         is_reported: 0,
+//         report_text: null,
+//         last_updated: new Date(),
+//       });
+
+//       console.log("[DEBUG] Submission updated in DB");
+
+//       return res.status(200).json({
+//         message: "Code submission updated successfully",
+//         submission: existingSubmission,
+//       });
+//     } else {
+//       // Create a new submission
+//       console.log("[DEBUG] Creating new submission");
+//       const newSubmission = await StudentSubmission.create({
+//         student_id: studentId,
+//         domain_id,
+//         question_id,
+//         score,
+//         question_points: 100, // Hardcoded
+//         solution_code,
+//         status,
+//         language,
+//         is_reported: 0,
+//         report_text: null,
+//         submitted_at: new Date(),
+//         last_updated: new Date(),
+//       });
+
+//       console.log("[DEBUG] Submission created in DB");
+
+//       return res.status(201).json({
+//         message: "Code submitted successfully",
+//         submission: newSubmission,
+//       });
+//     }
+//   } catch (error) {
+//     console.error("[DEBUG] Error Submitting Code:", error);
+//     res.status(500).json({ message: "Error submitting code", error: error.message });
+//   }
+// };
+
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Received Body:", req.body);
+
+//     const studentId = req.user.id; // Extracted from JWT
+//     const {
+//       domain_id,
+//       question_id,
+//       language,
+//       solution_code,
+//       test_results,
+//     } = req.body;
+
+//     if (!domain_id || !question_id || !language || !solution_code || !test_results) {
+//       console.error("[DEBUG] Missing required fields");
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // Fetch question details
+//     const question = await CodingQuestion.findOne({ where: { id: question_id } });
+//     if (!question) {
+//       console.error("[DEBUG] Question not found");
+//       return res.status(404).json({ message: "Question not found" });
+//     }
+
+//     // Calculate score
+//     const totalTests = test_results.length;
+//     const passedTests = test_results.filter((result) => result.success).length;
+
+//     // Normalize score to a percentage (0-100)
+//     const score = Math.round((passedTests / totalTests) * 100);
+
+//     // Determine status
+//     let status = "fail";
+//     if (score === 100) status = "pass";
+//     else if (score > 0) status = "partial";
+
+//     console.log("[DEBUG] Calculated Score (percentage):", score);
+//     console.log("[DEBUG] Status:", status);
+
+//     // Check for existing submission
+//     const existingSubmission = await StudentSubmission.findOne({
+//       where: {
+//         student_id: studentId,
+//         domain_id,
+//         question_id,
+//       },
+//     });
+
+//     if (existingSubmission) {
+//       // Update the existing record
+//       await existingSubmission.update({
+//         score,
+//         solution_code,
+//         status,
+//         language,
+//         last_updated: new Date(),
+//       });
+
+//       console.log("[DEBUG] Updated existing submission in DB");
+
+//       return res.status(200).json({
+//         message: "Submission updated successfully",
+//         submission: existingSubmission,
+//       });
+//     }
+
+//     // Insert new submission
+//     const submission = await StudentSubmission.create({
+//       student_id: studentId,
+//       domain_id,
+//       question_id,
+//       score,
+//       question_points: 100,
+//       solution_code,
+//       status,
+//       language,
+//       is_reported: 0,
+//       report_text: null,
+//       submitted_at: new Date(),
+//       last_updated: new Date(),
+//     });
+
+//     console.log("[DEBUG] Submission stored in DB");
+
+//     res.status(201).json({
+//       message: "Code submitted successfully",
+//       submission,
+//     });
+//   } catch (error) {
+//     console.error("[DEBUG] Error Submitting Code:", error);
+//     res.status(500).json({ message: "Error submitting code", error: error.message });
+//   }
+// };
+
+
+exports.submitCode = async (req, res) => {
+  try {
+    console.log("[DEBUG] Received Body:", req.body);
+
+    const studentId = req.user.id; // Extracted from JWT
+    const {
+      domain_id,
+      question_id,
+      language,
+      solution_code,
+      test_results,
+      question_points,
+      mode, // Mode can be "run" or "submit"
+    } = req.body;
+
+    if (!domain_id || !question_id || !language || !solution_code || !test_results || !mode || !question_points) {
+      console.error("[DEBUG] Missing required fields");
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Fetch question details
+    const question = await CodingQuestion.findOne({ where: { id: question_id } });
+    console.log("[DEBUG] Question Details:", question);
+
+    if (!question) {
+      console.error("[DEBUG] Question not found");
+      return res.status(404).json({ message: "Question not found" });
+    }
+
+    if (mode === "submit") {
+      // Calculate score only for "submit" mode
+      const totalTests = test_results.length;
+      const passedTests = test_results.filter((result) => result.success).length;
+
+      // Normalize score to a percentage (0-100)
+      const score = Math.round((passedTests / totalTests) * 100);
+
+      // Determine status
+      let status = "fail"; // Default to "fail"
+      if (score === 100) status = "pass";
+      else if (score > 0) status = "partial";
+
+      console.log("[DEBUG] Calculated Score (percentage):", score);
+      console.log("[DEBUG] Status:", status);
+
+      // Insert or Update submission record
+      const [submission, created] = await StudentSubmission.upsert(
+        {
+          student_id: studentId,
+          domain_id,
+          question_id,
+          score,
+          question_points: question_points, // Assuming max question points is 100
+          solution_code,
+          status,
+          language,
+          is_reported: 0,
+          report_text: null,
+          submitted_at: new Date(), // Only update on submission
+          last_updated: new Date(),
+        },
+        {
+          returning: true, // Return the created/updated instance
+          conflictFields: ["student_id", "question_id"], // Ensure no duplicates for same student/question
+        }
+      );
+
+      console.log(
+        `[DEBUG] Submission ${created ? "created" : "updated"} in DB`,
+        submission
+      );
+
+      res.status(201).json({
+        message: "Code submitted successfully",
+        submission,
+      });
+    } else if (mode === "run") {
+      // For "run" mode, return test results without saving to the database
+      console.log("[DEBUG] Run mode - Test results only");
+      res.status(200).json({
+        message: "Code run successfully",
+        test_results,
+      });
+    } else {
+      console.error("[DEBUG] Invalid mode specified");
+      return res.status(400).json({ message: "Invalid mode specified" });
+    }
+  } catch (error) {
+    console.error("[DEBUG] Error Submitting Code:", error);
+    res.status(500).json({ message: "Error submitting code", error: error.message });
+  }
+};
+
+
+ 
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Received Body:", req.body);
+
+//     const studentId = req.user.id; // Extracted from JWT
+//     const {
+//       domain_id,
+//       question_id,
+//       language,
+//       solution_code,
+//       test_results,
+//       mode,
+//     } = req.body;
+
+//     if (!domain_id || !question_id || !language || !solution_code || !test_results || !mode) {
+//       console.error("[DEBUG] Missing required fields");
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // Fetch question details
+//     const question = await CodingQuestion.findOne({ where: { id: question_id } });
+//     console.log("[DEBUG] Question Details:", question);
+
+//     if (!question) {
+//       console.error("[DEBUG] Question not found");
+//       return res.status(404).json({ message: "Question not found" });
+//     }
+
+//     // Calculate score
+//     const totalTests = test_results.length;
+//     const passedTests = test_results.filter((result) => result.success).length;
+
+//     // Normalize score to a percentage (0-100)
+//     const score = Math.round((passedTests / totalTests) * 100);
+
+//     // Determine status
+//     let status = "fail"; // Default to "fail"
+//     if (score === 100) status = "pass";
+//     else if (score > 0) status = "partial";
+
+//     console.log("[DEBUG] Calculated Score (percentage):", score);
+//     console.log("[DEBUG] Status:", status);
+
+//     // Insert or Update submission record
+//     const [submission, created] = await StudentSubmission.upsert(
+//       {
+//         student_id: studentId,
+//         domain_id,
+//         question_id,
+//         score,
+//         question_points: 100, // Hardcoded since questionPoints isn't needed anymore
+//         solution_code,
+//         status,
+//         language,
+//         is_reported: 0,
+//         report_text: null,
+//         submitted_at: new Date(),
+//         last_updated: new Date(),
+//       },
+//       {
+//         returning: true, // Return the created/updated instance
+//         conflictFields: ["student_id", "question_id"], // Prevent duplicates for same student/question
+//       }
+//     );
+
+//     console.log(
+//       `[DEBUG] Submission ${created ? "created" : "updated"} in DB`,
+//       submission
+//     );
+
+//     res.status(201).json({
+//       message: "Code submitted successfully",
+//       submission,
+//     });
+//   } catch (error) {
+//     console.error("[DEBUG] Error Submitting Code:", error);
+//     res.status(500).json({ message: "Error submitting code", error: error.message });
+//   }
+// };
+
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Received Body:", req.body);
+
+//     const studentId = req.user.id; // Extracted from JWT
+//     const {
+//       domain_id,
+//       question_id,
+//       language,
+//       solution_code,
+//       test_results,
+//       mode, // Mode can be "run" or "submit"
+//     } = req.body;
+
+//     if (!domain_id || !question_id || !language || !solution_code || !test_results || !mode) {
+//       console.error("[DEBUG] Missing required fields");
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // Fetch question details
+//     const question = await CodingQuestion.findOne({ where: { id: question_id } });
+//     console.log("[DEBUG] Question Details:", question);
+
+//     if (!question) {
+//       console.error("[DEBUG] Question not found");
+//       return res.status(404).json({ message: "Question not found" });
+//     }
+
+//     // Calculate question points based on difficulty level
+//     const difficulty = question.difficulty.toLowerCase(); // Assuming difficulty is "Level1", "Level2", etc.
+//     const levelMatch = difficulty.match(/level(\d+)/);
+//     const questionPoints = levelMatch ? parseInt(levelMatch[1], 10) * 100 : 100; // Default to 100 if no match
+//     console.log(`[DEBUG] Calculated Question Points: ${questionPoints}`);
+
+//     if (mode === "submit") {
+//       // Calculate score only for "submit" mode
+//       const totalTests = test_results.length;
+//       const passedTests = test_results.filter((result) => result.success).length;
+
+//       // Normalize score to a percentage (0-100)
+//       const score = Math.round((passedTests / totalTests) * 100);
+
+//       // Determine status
+//       let status = "fail"; // Default to "fail"
+//       if (score === 100) status = "pass";
+//       else if (score > 0) status = "partial";
+
+//       console.log("[DEBUG] Calculated Score (percentage):", score);
+//       console.log("[DEBUG] Status:", status);
+
+//       // Insert or Update submission record
+//       const [submission, created] = await StudentSubmission.upsert(
+//         {
+//           student_id: studentId,
+//           domain_id,
+//           question_id,
+//           score,
+//           question_points: questionPoints, // Assuming max question points is 100
+//           solution_code,
+//           status,
+//           language,
+//           is_reported: 0,
+//           report_text: null,
+//           submitted_at: new Date(), // Only update on submission
+//           last_updated: new Date(),
+//         },
+//         {
+//           returning: true, // Return the created/updated instance
+//           conflictFields: ["student_id", "question_id"], // Ensure no duplicates for same student/question
+//         }
+//       );
+
+//       console.log(
+//         `[DEBUG] Submission ${created ? "created" : "updated"} in DB`,
+//         submission
+//       );
+
+//       res.status(201).json({
+//         message: "Code submitted successfully",
+//         submission,
+//       });
+//     } else if (mode === "run") {
+//       // For "run" mode, return test results without saving to the database
+//       console.log("[DEBUG] Run mode - Test results only");
+//       res.status(200).json({
+//         message: "Code run successfully",
+//         test_results,
+//       });
+//     } else {
+//       console.error("[DEBUG] Invalid mode specified");
+//       return res.status(400).json({ message: "Invalid mode specified" });
+//     }
+//   } catch (error) {
+//     console.error("[DEBUG] Error Submitting Code:", error);
+//     res.status(500).json({ message: "Error submitting code", error: error.message });
+//   }
+// };
+
+
+
+
+// exports.saveCode = async (req, res) => {
+//   try {
+//     const { solution_code, question_id, language } = req.body;
+//     const studentId = req.user.id;
+
+//     if (!solution_code || !question_id || !language) {
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // Update the existing submission or create a new one
+//     await StudentSubmission.upsert(
+//       {
+//         student_id: studentId,
+//         question_id,
+//         solution_code,
+//         language,
+//         last_updated: new Date(),
+//       },
+//       {
+//         conflictFields: ["student_id", "question_id"], // Ensure uniqueness
+//       }
+//     );
+
+//     res.status(200).json({ message: "Code saved successfully" });
+//   } catch (error) {
+//     console.error("[DEBUG] Error saving code:", error);
+//     res.status(500).json({ message: "Error saving code", error: error.message });
+//   }
+// };
+
+
+// exports.saveCode = async (req, res) => {
+//   try {
+//     if (!req.user || !req.user.id) {
+//       return res.status(400).json({ message: "User not authenticated" });
+//     }
+
+//     const { solution_code, question_id, language, domain_id } = req.body;
+//     const studentId = req.user.id;
+
+//     if (!solution_code || !question_id || !language|| !domain_id) {
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // Update the existing submission or create a new one
+//     await StudentSubmission.upsert(
+//       {
+//         student_id: studentId,
+//         question_id,
+//         solution_code,
+//         language,
+//         domain_id,
+//         last_updated: new Date(),
+//       },
+//       {
+//         conflictFields: ["student_id", "question_id"], // Ensure uniqueness
+//       }
+//     );
+
+//     res.status(200).json({ message: "Code saved successfully" });
+//   } catch (error) {
+//     console.error("[DEBUG] Error saving code:", error);
+//     res.status(500).json({ message: "Error saving code", error: error.message });
+//   }
+// };
+
+
+
+exports.saveCode = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(400).json({ message: "User not authenticated" });
+    }
+
+    const { solution_code, question_id, language, domain_id } = req.body;
+    const studentId = req.user.id;
+
+    if (!solution_code || !question_id || !language || !domain_id) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Fetch question details
+    const question = await CodingQuestion.findOne({ where: { id: question_id } });
+    if (!question) {
+      return res.status(404).json({ message: "Question not found" });
+    }
+
+    // Calculate question points based on difficulty level
+    const difficulty = question.difficulty.toLowerCase();
+    const levelMatch = difficulty.match(/level(\d+)/);
+    const questionPoints = levelMatch ? parseInt(levelMatch[1], 10) * 100 : 100;
+    console.log(`[DEBUG] Calculated Question Points: ${questionPoints}`);
+
+    // Update the existing submission or create a new one
+    await StudentSubmission.upsert(
+      {
+        student_id: studentId,
+        question_id,
+        solution_code,
+        language,
+        domain_id,
+        question_points: questionPoints, // Use dynamically calculated question points
+        last_updated: new Date(),
+      },
+      {
+        conflictFields: ["student_id", "question_id"], // Ensure uniqueness
+      }
+    );
+
+    res.status(200).json({ message: "Code saved successfully" });
+  } catch (error) {
+    console.error("[DEBUG] Error saving code:", error);
+    res.status(500).json({ message: "Error saving code", error: error.message });
   }
 };
