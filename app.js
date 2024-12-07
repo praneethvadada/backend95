@@ -7,6 +7,8 @@ const collegeRoutes = require('./routes/collegeRoutes');
 const batchRoutes = require('./routes/batchRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const languageRoutes = require('./routes/languageRoutes');
+const assessmentRoutes = require('./routes/assessmentRoutes'); // Import the new assessment routes
+
 const cors = require('cors');
 
 app.use(cors());
@@ -20,6 +22,7 @@ app.use('/colleges', collegeRoutes);
 app.use('/batches', batchRoutes);
 app.use('/students', studentRoutes);
 app.use('/languages', languageRoutes);
+app.use('/assessments', assessmentRoutes); // Use the new assessment routes
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

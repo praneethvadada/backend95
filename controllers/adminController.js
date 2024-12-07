@@ -587,41 +587,55 @@ exports.updateMCQQuestionApprovalStatus = async (req, res) => {
 
 
 
-// Admin fetches all pending coding questions
-// exports. getAllPendingCodingQuestions = async (req, res) => {
+// Important Code
+// exports.getAllPendingCodingQuestions = async (req, res) => {
 //   try {
-//     // Fetch all coding questions with approval_status set to 'pending'
 //     const pendingCodingQuestions = await CodingQuestion.findAll({
-//       where: { approval_status: 'pending' }
+//       where: { approval_status: 'pending' },
 //     });
 
 //     if (!pendingCodingQuestions.length) {
 //       return res.status(200).json({ message: 'No pending coding questions found' });
 //     }
 
-//     res.status(200).json({ message: 'Pending coding questions fetched successfully', pendingCodingQuestions });
+//     // Parse JSON strings to arrays
+//     const parsedQuestions = pendingCodingQuestions.map((question) => ({
+//       ...question.dataValues,
+//       test_cases: JSON.parse(question.dataValues.test_cases),
+//       solutions: JSON.parse(question.dataValues.solutions),
+//     }));
+
+//     res.status(200).json({
+//       message: 'Pending coding questions fetched successfully',
+//       pendingCodingQuestions: parsedQuestions,
+//     });
 //   } catch (error) {
 //     console.error('Error fetching pending coding questions:', error);
 //     res.status(500).json({ message: 'Error fetching pending coding questions', error });
 //   }
 // };
 
-
 exports.getAllPendingCodingQuestions = async (req, res) => {
   try {
     const pendingCodingQuestions = await CodingQuestion.findAll({
-      where: { approval_status: 'pending' },
+      where: { approval_status: 'Pending' }, // Ensure case matches database value
     });
 
     if (!pendingCodingQuestions.length) {
       return res.status(200).json({ message: 'No pending coding questions found' });
     }
 
-    // Parse JSON strings to arrays
+    // Parse JSON strings to arrays if necessary
     const parsedQuestions = pendingCodingQuestions.map((question) => ({
       ...question.dataValues,
-      test_cases: JSON.parse(question.dataValues.test_cases),
-      solutions: JSON.parse(question.dataValues.solutions),
+      test_cases:
+        typeof question.dataValues.test_cases === 'string'
+          ? JSON.parse(question.dataValues.test_cases)
+          : question.dataValues.test_cases,
+      solutions:
+        typeof question.dataValues.solutions === 'string'
+          ? JSON.parse(question.dataValues.solutions)
+          : question.dataValues.solutions,
     }));
 
     res.status(200).json({
@@ -633,6 +647,7 @@ exports.getAllPendingCodingQuestions = async (req, res) => {
     res.status(500).json({ message: 'Error fetching pending coding questions', error });
   }
 };
+
 
 
 // // Admin fetches all pending MCQ questions
@@ -655,21 +670,60 @@ exports.getAllPendingCodingQuestions = async (req, res) => {
 // };
 
 
+
+// Important Code
+// exports.getAllPendingMCQQuestions = async (req, res) => {
+//   try {
+//     const pendingMCQQuestions = await MCQQuestion.findAll({
+//       where: { approval_status: 'Pending' },
+//     });
+
+//     if (!pendingMCQQuestions.length) {
+//       return res.status(200).json({ message: 'No pending MCQ questions found' });
+//     }
+
+//     // Parse JSON strings to arrays
+//     const parsedQuestions = pendingMCQQuestions.map((question) => ({
+//       ...question.dataValues,
+//       options: JSON.parse(question.dataValues.options),
+//       correct_answers: JSON.parse(question.dataValues.correct_answers),
+//     }));
+
+//     res.status(200).json({
+//       message: 'Pending MCQ questions fetched successfully',
+//       pendingMCQQuestions: parsedQuestions,
+//     });
+//   } catch (error) {
+//     console.error('Error fetching pending MCQ questions:', error);
+//     res.status(500).json({ message: 'Error fetching pending MCQ questions', error });
+//   }
+// };
+
+
+
+
+
 exports.getAllPendingMCQQuestions = async (req, res) => {
   try {
     const pendingMCQQuestions = await MCQQuestion.findAll({
-      where: { approval_status: 'pending' },
+      where: { approval_status: 'Pending' },
     });
 
     if (!pendingMCQQuestions.length) {
       return res.status(200).json({ message: 'No pending MCQ questions found' });
     }
 
-    // Parse JSON strings to arrays
+    // Parse JSON strings to arrays if necessary
     const parsedQuestions = pendingMCQQuestions.map((question) => ({
       ...question.dataValues,
-      options: JSON.parse(question.dataValues.options),
-      correct_answers: JSON.parse(question.dataValues.correct_answers),
+      options:
+        typeof question.dataValues.options === 'string'
+          ? JSON.parse(question.dataValues.options)
+          : question.dataValues.options,
+      correct_answers:
+        typeof question.dataValues.correct_answers === 'string'
+          ? JSON.parse(question.dataValues.correct_answers)
+          : question.dataValues.correct_answers,
     }));
 
     res.status(200).json({
@@ -681,6 +735,8 @@ exports.getAllPendingMCQQuestions = async (req, res) => {
     res.status(500).json({ message: 'Error fetching pending MCQ questions', error });
   }
 };
+
+
 
 
 
@@ -1995,46 +2051,91 @@ exports.getMCQQuestionsByDomain = async (req, res) => {
 
 
 
-exports.updateCodingQuestionsDomain = async (req, res) => {
-  try {
-    const { question_ids, codingquestiondomain_id } = req.body; // Extract question IDs and new domain ID from request body
+// exports.updateCodingQuestionsDomain = async (req, res) => {
+//   try {
+//     const { question_ids, codingquestiondomain_id } = req.body; // Extract question IDs and new domain ID from request body
 
-    // Check if both question_ids and codingquestiondomain_id are provided
+//     // Check if both question_ids and codingquestiondomain_id are provided
+//     if (!question_ids || !Array.isArray(question_ids) || question_ids.length === 0) {
+//       return res.status(400).json({ message: 'Invalid or empty question IDs array' });
+//     }
+
+//     if (!codingquestiondomain_id) {
+//       return res.status(400).json({ message: 'Coding question domain ID is required' });
+//     }
+
+//     // Update all coding questions with the provided IDs
+//     const updatedCount = await CodingQuestion.update(
+//       { codingquestiondomain_id }, // New domain ID to set
+//       { where: { id: question_ids } } // Filter questions by their IDs
+//     );
+
+//     // If no questions were updated, return an error
+//     if (updatedCount[0] === 0) {
+//       return res.status(404).json({ message: 'No matching coding questions found to update' });
+//     }
+
+//     res.status(200).json({
+//       message: 'Coding questions updated successfully',
+//       updatedCount: updatedCount[0], // Number of updated records
+//     });
+//   } catch (error) {
+//     console.error('Error updating coding questions domain:', error); // Log the error for debugging
+//     res.status(500).json({
+//       message: 'Error updating coding questions domain',
+//       error: error.message || error,
+//     });
+//   }
+// };
+
+
+
+// Fetch Child MCQ Domains
+
+
+exports.updateCodingQuestionsDomain = async (req, res) => {
+  const { question_ids, codingquestiondomain_id } = req.body;
+
+  try {
+    // Validate input
     if (!question_ids || !Array.isArray(question_ids) || question_ids.length === 0) {
       return res.status(400).json({ message: 'Invalid or empty question IDs array' });
     }
-
     if (!codingquestiondomain_id) {
       return res.status(400).json({ message: 'Coding question domain ID is required' });
     }
 
-    // Update all coding questions with the provided IDs
+    // Update coding questions table
     const updatedCount = await CodingQuestion.update(
-      { codingquestiondomain_id }, // New domain ID to set
-      { where: { id: question_ids } } // Filter questions by their IDs
+      { codingquestiondomain_id },
+      { where: { id: question_ids } }
     );
 
-    // If no questions were updated, return an error
     if (updatedCount[0] === 0) {
       return res.status(404).json({ message: 'No matching coding questions found to update' });
     }
 
+    // Update domain_id in student_submissions table for relevant questions
+    const studentSubmissionUpdateCount = await StudentSubmission.update(
+      { domain_id: codingquestiondomain_id },
+      { where: { question_id: question_ids } }
+    );
+
     res.status(200).json({
-      message: 'Coding questions updated successfully',
-      updatedCount: updatedCount[0], // Number of updated records
+      message: 'Coding questions and related student submissions updated successfully',
+      updatedCodingQuestionsCount: updatedCount[0],
+      updatedStudentSubmissionsCount: studentSubmissionUpdateCount[0], // Number of updated records in student_submissions
     });
   } catch (error) {
-    console.error('Error updating coding questions domain:', error); // Log the error for debugging
+    console.error('Error updating coding questions domain and student submissions:', error);
     res.status(500).json({
-      message: 'Error updating coding questions domain',
+      message: 'Error updating coding questions domain and student submissions',
       error: error.message || error,
     });
   }
 };
 
 
-
-// Fetch Child MCQ Domains
 exports.getmcqChildDomains = async (req, res) => {
   try {
     const { parent_id } = req.params; // Get the parent_id from route parameters

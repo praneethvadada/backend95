@@ -1,7 +1,7 @@
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const {StudentMcqAnswer , StudentSubmission, BatchPracticeQuestion, CodingQuestion, MCQQuestion, Student, Batch, College} = require('../models');
+const {AssessmentQuestion, StudentMcqAnswer , StudentSubmission, BatchPracticeQuestion, CodingQuestion, MCQQuestion, Student, Batch, College} = require('../models');
 const db = require('../models');
 const { Op } = require('sequelize');
 
@@ -1688,5 +1688,141 @@ exports.saveCode = async (req, res) => {
   } catch (error) {
     console.error("[DEBUG] Error saving code:", error);
     res.status(500).json({ message: "Error saving code", error: error.message });
+  }
+};
+
+
+// const { AssessmentQuestion, CodingQuestion, MCQQuestion } = require('../models');
+
+exports.getAssessmentQuestionsByRoundId = async (req, res) => {
+  try {
+    const { roundId } = req.params;
+
+    // Validate roundId
+    if (!roundId) {
+      return res.status(400).json({ message: "Round ID is required" });
+    }
+
+    // Fetch assessment questions for the round ID
+    const assessmentQuestions = await AssessmentQuestion.findAll({
+      where: { round_id: roundId },
+      include: [
+        {
+          model: CodingQuestion,
+          as: 'codingQuestion',
+          where: { question_type: 'assessment' },
+          required: false, // Optional join
+          // attributes: ['id', 'title', 'description', 'difficulty', 'createdAt'],
+          attributes: [
+            'id',
+            'title',
+            'description',
+            'input_format',
+            'output_format',
+            'test_cases',
+            'constraints',
+            'difficulty',
+            'allowed_languages',
+          
+            
+          ],
+        },
+        {
+          model: MCQQuestion,
+          as: 'mcqQuestion',
+          where: { question_type: 'assessment' },
+          required: false, // Optional join
+          // attributes: [
+          //   'id',
+          //   'title',
+          //   'options',
+          //   'correct_answers',
+          //   'difficulty',
+          //   'is_single_answer',
+          // ],
+          attributes: [
+            'id', 'title', 'options', 'is_single_answer',
+             'code_snippets', 'question_type',
+            'created_by', 'difficulty', 'round_id', 'createdAt', 'updatedAt'
+          ],
+        },
+      ],
+    });
+
+    if (!assessmentQuestions || assessmentQuestions.length === 0) {
+      return res.status(404).json({ message: "No assessment questions found for this round" });
+    }
+
+    // Format the response
+    const response = assessmentQuestions.map((aq) => ({
+      id: aq.id,
+      roundId: aq.round_id,
+      codingQuestion: aq.codingQuestion || null, // Include coding question if present
+      mcqQuestion: aq.mcqQuestion || null, // Include MCQ question if present
+    }));
+
+    res.status(200).json({
+      message: "Assessment questions fetched successfully",
+      questions: response,
+    });
+  } catch (error) {
+    console.error("[DEBUG] Error fetching assessment questions:", error);
+    res.status(500).json({
+      message: "Error fetching assessment questions",
+      error: error.message,
+    });
+  }
+};
+
+
+
+
+exports.getAllAssessments = async (req, res) => {
+  try {
+    // Fetch all assessments from the database
+    const assessments = await Assessment.findAll();
+
+    if (!assessments || assessments.length === 0) {
+      return res.status(404).json({ message: 'No assessments found' });
+    }
+
+    // Return the list of assessments
+    res.status(200).json({
+      message: 'Assessments fetched successfully',
+      assessments
+    });
+  } catch (error) {
+    console.error('Error fetching assessments:', error);
+    res.status(500).json({ message: 'Error fetching assessments', error });
+  }
+};
+
+
+exports.getRoundIdsByAssessmentId = async (req, res) => {
+  try {
+    const { assessment_id } = req.params; // Get assessment_id from the request params
+
+    // Fetch all rounds for the given assessment_id
+    const assessmentRounds = await AssessmentRound.findAll({
+      where: { assessment_id },
+      attributes: ['id', 'round_order', 'round_type'], // Only fetch round id and round order
+      order: [['round_order', 'ASC']] // Order rounds by their round order
+    });
+
+    if (!assessmentRounds.length) {
+      // Return 200 status with a clear message if no rounds found
+      return res.status(200).json({
+        message: 'No rounds found for this assessment',
+        rounds: []
+      });
+    }
+
+    res.status(200).json({
+      message: 'Rounds fetched successfully',
+      rounds: assessmentRounds
+    });
+  } catch (error) {
+    console.error('Error fetching round IDs:', error);
+    res.status(500).json({ message: 'Error fetching round IDs', error });
   }
 };

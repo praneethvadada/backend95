@@ -56,4 +56,11 @@ router.post('/mark-question', studentController.toggleMarkQuestion);
 router.post('/report-question', studentController.reportQuestion);
 router.post('/auto-save-code',verifyStudent , studentController.saveCode);
 
+// getAssessmentQuestionsByRoundId
+
+
+router.get('/student-get-all-assessments', verifyStudent, studentController.getAllAssessments);
+router.get('/student-assessment-rounds/round-ids/:assessment_id', verifyStudent, studentController.getRoundIdsByAssessmentId);
+router.get('/assessment-question/round_id/:roundId',verifyStudent, studentController.getAssessmentQuestionsByRoundId);
+
 module.exports = router;

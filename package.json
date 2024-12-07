@@ -24,6 +24,8 @@
     "pg": "^8.13.0",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.4",
-    "sequelize-cli": "^6.6.2"
+    "sequelize-cli": "^6.6.2",
+    "server": "^1.0.41",
+    "socket.io": "^4.8.1"
   }
 }
