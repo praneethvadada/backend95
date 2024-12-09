@@ -3,6 +3,7 @@ const router = express.Router();
 const studentController = require('../controllers/studentController');
 const { verifyAdmin, verifyStudent  } = require('../middleware/authMiddleware');
 const adminController = require('../controllers/adminController');
+const assessmentController = require('../controllers/assessmentController');
 
 
 router.post('/login', studentController.studentLogin);
@@ -63,4 +64,7 @@ router.get('/student-get-all-assessments', verifyStudent, studentController.getA
 router.get('/student-assessment-rounds/round-ids/:assessment_id', verifyStudent, studentController.getRoundIdsByAssessmentId);
 router.get('/assessment-question/round_id/:roundId',verifyStudent, studentController.getAssessmentQuestionsByRoundId);
 
+
+
+router.post('/assessment-mcq-question-submit',verifyStudent, assessmentController.submitMcqAnswer);
 module.exports = router;

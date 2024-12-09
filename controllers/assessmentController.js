@@ -1,5 +1,8 @@
 const {AllowedLanguage, Assessment, AssessmentRound, AssessmentQuestion, CodingQuestion, MCQQuestion } = require('../models');
 const { Op } = require('sequelize');
+const { StudentResults } = require('../models');
+const axios = require('axios'); // For Docker API communication
+
 
 // Get all live assessments for students
 // exports.getLiveAssessments = async (req, res) => {
@@ -824,6 +827,7 @@ exports.getAssessmentQuestions = async (req, res) => {
             'difficulty',
             'allowed_languages', // Numeric IDs are fetched here
             'solutions',
+            'round_id',
             'codingquestiondomain_id',
           ],
         },
@@ -833,7 +837,7 @@ exports.getAssessmentQuestions = async (req, res) => {
           attributes: [
             'id', 'title', 'options', 'correct_answers', 'is_single_answer',
             'mcqdomain_id', 'code_snippets', 'question_type', 'approval_status',
-            'created_by', 'difficulty', 'round_id', 'createdAt', 'updatedAt',
+            'created_by', 'difficulty', 'round_id', 'createdAt', 'updatedAt', 'round_id'
           ],
         },
       ],
@@ -872,4 +876,1606 @@ exports.getAssessmentQuestions = async (req, res) => {
   }
 };
 
+
+
+
+
+
+
+
+
+// exports.submitCode = async (req, res) => {
+//   Console.log("Hello, Assessment Questions");
+//   try {
+//     const studentId = req.user.id; // Extracted from JWT
+//     const { question_id, language, solution_code, mode } = req.body;
+
+//     // Validate input
+//     if (!question_id || !language || !solution_code || !mode) {
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // Fetch question details
+//     const question = await CodingQuestion.findByPk(question_id);
+//     if (!question) {
+//       return res.status(404).json({ message: "Coding question not found" });
+//     }
+
+//     // Prepare test cases
+//     const testCases = req.body.testcases || question.test_cases; // Use provided or default test cases
+//     if (!testCases || !Array.isArray(testCases) || testCases.length === 0) {
+//       return res.status(400).json({ message: "Invalid or missing test cases" });
+//     }
+
+//     // Determine Docker API endpoint based on language
+//     const dockerEndpoints = {
+//       python: 'http://localhost:8084/compile',
+//       java: 'http://localhost:8083/compile',
+//       cpp: 'http://localhost:8081/compile',
+//       c: 'http://localhost:8082/compile',
+//     };
+//     const dockerEndpoint = dockerEndpoints[language.toLowerCase()];
+//     if (!dockerEndpoint) {
+//       return res.status(400).json({ message: "Unsupported programming language" });
+//     }
+
+//     // Send request to Docker API for code execution
+//     const dockerRequest = {
+//       language: language.toLowerCase(),
+//       code: solution_code,
+//       testcases: testCases,
+//     };
+
+//     const dockerResponse = await axios.post(dockerEndpoint, dockerRequest);
+//     const testResults = dockerResponse.data; // Expected array of test case results
+
+//     // Validate Docker response
+//     if (!Array.isArray(testResults) || testResults.length === 0) {
+//       return res.status(500).json({ message: "Invalid response from Docker API" });
+//     }
+
+//     // Calculate score and determine status (for "submit" mode only)
+//     if (mode === 'submit') {
+//       const totalTests = testResults.length;
+//       const passedTests = testResults.filter((result) => result.success).length;
+//       const score = Math.round((passedTests / totalTests) * 100);
+//       const status = score === 100 ? 'pass' : score > 0 ? 'partial' : 'fail';
+
+//       // Save submission to StudentResults table
+//       const submission = await StudentResults.create({
+//         student_id: studentId,
+//         assessment_id: question.assessment_id,
+//         round_id: question.round_id,
+//         question_id,
+//         question_type: 'coding',
+//         solution_code,
+//         language,
+//         submitted_options: null, // Not applicable for coding questions
+//         question_points: question.question_points || 100,
+//         score,
+//         createdAt: new Date(),
+//         updatedAt: new Date(),
+//       });
+
+//       return res.status(201).json({
+//         message: "Code submitted successfully",
+//         submission,
+//         test_results: testResults,
+//       });
+//     }
+
+//     // For "run" mode, return test results only
+//     return res.status(200).json({
+//       message: "Code executed successfully",
+//       test_results: testResults,
+//     });
+
+//   } catch (error) {
+//     console.error("Error in submitCode:", error);
+//     res.status(500).json({ message: "Error processing request", error: error.message });
+//   }
+// };
+
+
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     const studentId = req.user.id; // Extracted from JWT
+//     const { round_id, question_id, language, solution_code, mode } = req.body;
+
+//     // Validate input
+//     if (!round_id || !question_id || !language || !solution_code || !mode) {
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // Fetch question details
+//     const question = await CodingQuestion.findByPk(question_id);
+//     if (!question) {
+//       return res.status(404).json({ message: "Coding question not found" });
+//     }
+
+//     // Prepare test cases
+//     const testCases = req.body.testcases || question.test_cases; // Use provided or default test cases
+//     if (!testCases || !Array.isArray(testCases) || testCases.length === 0) {
+//       return res.status(400).json({ message: "Invalid or missing test cases" });
+//     }
+
+//     // Determine Docker API endpoint based on language
+//     const dockerEndpoints = {
+//       python: 'http://localhost:8084/compile',
+//       java: 'http://localhost:8083/compile',
+//       cpp: 'http://localhost:8081/compile',
+//       c: 'http://localhost:8082/compile',
+//     };
+//     const dockerEndpoint = dockerEndpoints[language.toLowerCase()];
+//     if (!dockerEndpoint) {
+//       return res.status(400).json({ message: "Unsupported programming language" });
+//     }
+
+//     // Send request to Docker API for code execution
+//     const dockerRequest = {
+//       language: language.toLowerCase(),
+//       code: solution_code,
+//       testcases: testCases,
+//     };
+
+//     const dockerResponse = await axios.post(dockerEndpoint, dockerRequest);
+//     const testResults = dockerResponse.data; // Expected array of test case results
+
+//     // Validate Docker response
+//     if (!Array.isArray(testResults) || testResults.length === 0) {
+//       return res.status(500).json({ message: "Invalid response from Docker API" });
+//     }
+
+//     // Calculate score and determine status (for "submit" mode only)
+//     if (mode === 'submit') {
+//       const totalTests = testResults.length;
+//       const passedTests = testResults.filter((result) => result.success).length;
+//       const score = Math.round((passedTests / totalTests) * 100);
+//       const status = score === 100 ? 'pass' : score > 0 ? 'partial' : 'fail';
+
+//       // Save submission to StudentResults table
+//       const submission = await StudentResults.create({
+//         student_id: studentId,
+//         assessment_id: question.assessment_id,
+//         round_id, // Use round_id instead of domain_id
+//         question_id,
+//         question_type: 'coding',
+//         solution_code,
+//         language,
+//         submitted_options: null, // Not applicable for coding questions
+//         question_points: question.question_points || 100,
+//         score,
+//         createdAt: new Date(),
+//         updatedAt: new Date(),
+//       });
+
+//       return res.status(201).json({
+//         message: "Code submitted successfully",
+//         submission,
+//         test_results: testResults,
+//       });
+//     }
+
+//     // For "run" mode, return test results only
+//     return res.status(200).json({
+//       message: "Code executed successfully",
+//       test_results: testResults,
+//     });
+
+//   } catch (error) {
+//     console.error("Error in submitCode:", error);
+//     res.status(500).json({ message: "Error processing request", error: error.message });
+//   }
+// };
+
+
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     const studentId = req.user.id; // Extracted from JWT
+//     const { round_id, question_id, language, solution_code, mode } = req.body;
+
+//     // Validate input
+//     if (!round_id || !question_id || !language || !solution_code || !mode) {
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // Fetch question details
+//     const question = await CodingQuestion.findByPk(question_id);
+
+//     // Handle case where the question is not found
+//     if (!question) {
+//       return res.status(404).json({ message: "Coding question not found for the provided ID" });
+//     }
+
+//     // Ensure the question belongs to the given round
+//     if (question.round_id !== round_id) {
+//       return res.status(400).json({ message: "Question does not belong to the specified round" });
+//     }
+
+//     // Prepare test cases
+//     const testCases = req.body.testcases || question.test_cases;
+//     if (!testCases || !Array.isArray(testCases) || testCases.length === 0) {
+//       return res.status(400).json({ message: "Invalid or missing test cases" });
+//     }
+
+//     // Determine Docker API endpoint based on language
+//     const dockerEndpoints = {
+//       python: 'http://localhost:8084/compile',
+//       java: 'http://localhost:8083/compile',
+//       cpp: 'http://localhost:8081/compile',
+//       c: 'http://localhost:8082/compile',
+//     };
+//     const dockerEndpoint = dockerEndpoints[language.toLowerCase()];
+//     if (!dockerEndpoint) {
+//       return res.status(400).json({ message: "Unsupported programming language" });
+//     }
+
+//     // Send request to Docker API for code execution
+//     const dockerRequest = {
+//       language: language.toLowerCase(),
+//       code: solution_code,
+//       testcases: testCases,
+//     };
+
+//     const dockerResponse = await axios.post(dockerEndpoint, dockerRequest);
+//     const testResults = dockerResponse.data; // Expected array of test case results
+
+//     // Validate Docker response
+//     if (!Array.isArray(testResults) || testResults.length === 0) {
+//       return res.status(500).json({ message: "Invalid response from Docker API" });
+//     }
+
+//     // Calculate score and determine status (for "submit" mode only)
+//     if (mode === 'submit') {
+//       const totalTests = testResults.length;
+//       const passedTests = testResults.filter((result) => result.success).length;
+//       const score = Math.round((passedTests / totalTests) * 100);
+//       const status = score === 100 ? 'pass' : score > 0 ? 'partial' : 'fail';
+
+//       // Save submission to StudentResults table
+//       const submission = await StudentResults.create({
+//         student_id: studentId,
+//         assessment_id: question.assessment_id,
+//         round_id, // Use round_id instead of domain_id
+//         question_id,
+//         question_type: 'coding',
+//         solution_code,
+//         language,
+//         submitted_options: null, // Not applicable for coding questions
+//         question_points: question.question_points || 100,
+//         score,
+//         createdAt: new Date(),
+//         updatedAt: new Date(),
+//       });
+
+//       return res.status(201).json({
+//         message: "Code submitted successfully",
+//         submission,
+//         test_results: testResults,
+//       });
+//     }
+
+//     // For "run" mode, return test results only
+//     return res.status(200).json({
+//       message: "Code executed successfully",
+//       test_results: testResults,
+//     });
+
+//   } catch (error) {
+//     console.error("Error in submitCode:", error);
+//     res.status(500).json({ message: "Error processing request", error: error.message });
+//   }
+// };
+
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Starting submitCode");
+//     console.log("[DEBUG] Request Body:", req.body);
+//     console.log("[DEBUG] Authenticated User ID:", req.user.id);
+
+//     const studentId = req.user.id; // Extracted from JWT
+//     const { round_id, question_id, language, solution_code, mode } = req.body;
+
+//     // Validate input
+//     if (!round_id || !question_id || !language || !solution_code || !mode) {
+//       console.error("[DEBUG] Missing required fields");
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+//     console.log("[DEBUG] Input validated successfully");
+
+//     // Fetch question details
+//     console.log("[DEBUG] Fetching question details for question_id:", question_id);
+//     const question = await CodingQuestion.findByPk(question_id);
+
+//     // Handle case where the question is not found
+//     if (!question) {
+//       console.error("[DEBUG] Coding question not found for ID:", question_id);
+//       return res.status(404).json({ message: "Coding question not found for the provided ID" });
+//     }
+//     console.log("[DEBUG] Question fetched successfully:", question);
+
+//     // Ensure the question belongs to the given round
+//     if (question.round_id !== round_id) {
+//       console.error("[DEBUG] Question does not belong to the specified round. Question round_id:", question.round_id);
+//       return res.status(400).json({ message: "Question does not belong to the specified round" });
+//     }
+//     console.log("[DEBUG] Round ID validated successfully");
+
+//     // Prepare test cases
+//     const testCases = req.body.testcases || question.test_cases;
+//     if (!testCases || !Array.isArray(testCases) || testCases.length === 0) {
+//       console.error("[DEBUG] Invalid or missing test cases");
+//       return res.status(400).json({ message: "Invalid or missing test cases" });
+//     }
+//     console.log("[DEBUG] Test cases prepared successfully");
+
+//     // Determine Docker API endpoint
+//     console.log("[DEBUG] Determining Docker API endpoint for language:", language);
+//     const dockerEndpoints = {
+//       python: 'http://localhost:8084/compile',
+//       java: 'http://localhost:8083/compile',
+//       cpp: 'http://localhost:8081/compile',
+//       c: 'http://localhost:8082/compile',
+//     };
+//     const dockerEndpoint = dockerEndpoints[language.toLowerCase()];
+//     if (!dockerEndpoint) {
+//       console.error("[DEBUG] Unsupported programming language:", language);
+//       return res.status(400).json({ message: "Unsupported programming language" });
+//     }
+//     console.log("[DEBUG] Docker endpoint determined:", dockerEndpoint);
+
+//     // Send request to Docker API
+//     console.log("[DEBUG] Sending request to Docker API");
+//     const dockerRequest = {
+//       language: language.toLowerCase(),
+//       code: solution_code,
+//       testcases: testCases,
+//     };
+//     const dockerResponse = await axios.post(dockerEndpoint, dockerRequest);
+//     const testResults = dockerResponse.data;
+
+//     // Validate Docker response
+//     if (!Array.isArray(testResults) || testResults.length === 0) {
+//       console.error("[DEBUG] Invalid response from Docker API:", testResults);
+//       return res.status(500).json({ message: "Invalid response from Docker API" });
+//     }
+//     console.log("[DEBUG] Docker API response received:", testResults);
+
+//     // Handle submission mode
+//     if (mode === 'submit') {
+//       console.log("[DEBUG] Handling submission mode");
+//       const totalTests = testResults.length;
+//       const passedTests = testResults.filter((result) => result.success).length;
+//       const score = Math.round((passedTests / totalTests) * 100);
+//       const status = score === 100 ? 'pass' : score > 0 ? 'partial' : 'fail';
+
+//       console.log("[DEBUG] Calculated Score:", score, "Status:", status);
+
+//       // Save submission
+//       const submission = await StudentResults.create({
+//         student_id: studentId,
+//         assessment_id: question.assessment_id,
+//         round_id,
+//         question_id,
+//         question_type: 'coding',
+//         solution_code,
+//         language,
+//         question_points: question.question_points || 100,
+//         score,
+//       });
+//       console.log("[DEBUG] Submission saved:", submission);
+
+//       return res.status(201).json({
+//         message: "Code submitted successfully",
+//         submission,
+//         test_results: testResults,
+//       });
+//     }
+
+//     console.log("[DEBUG] Handling run mode");
+//     return res.status(200).json({
+//       message: "Code executed successfully",
+//       test_results: testResults,
+//     });
+//   } catch (error) {
+//     console.error("[DEBUG] Error in submitCode:", error);
+//     res.status(500).json({ message: "Error processing request", error: error.message });
+//   }
+// };
+
+
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Starting submitCode");
+//     console.log("[DEBUG] Request Body:", req.body);
+//     console.log("[DEBUG] Authenticated User ID:", req.user.id);
+
+//     const studentId = req.user.id; // Extracted from JWT
+//     const { round_id, question_id, language, solution_code, mode } = req.body;
+
+//     // Validate input
+//     if (!round_id || !question_id || !language || !solution_code || !mode) {
+//       console.error("[DEBUG] Missing required fields");
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+//     console.log("[DEBUG] Input validated successfully");
+
+//     // Fetch question details
+//     console.log("[DEBUG] Fetching question details for question_id:", question_id);
+//     const question = await CodingQuestion.findByPk(question_id);
+
+//     // Handle case where the question is not found
+//     if (!question) {
+//       console.error("[DEBUG] Coding question not found for ID:", question_id);
+//       return res.status(404).json({ message: "Coding question not found for the provided ID" });
+//     }
+//     console.log("[DEBUG] Question fetched successfully:", question);
+
+//     // Ensure the question belongs to the given round
+//     if (question.round_id !== round_id) {
+//       console.error("[DEBUG] Question does not belong to the specified round. Question round_id:", question.round_id);
+//       return res.status(400).json({ message: "Question does not belong to the specified round" });
+//     }
+//     console.log("[DEBUG] Round ID validated successfully");
+
+//     // Prepare test cases
+//     const testCases = req.body.testcases || question.test_cases;
+//     if (!testCases || !Array.isArray(testCases) || testCases.length === 0) {
+//       console.error("[DEBUG] Invalid or missing test cases");
+//       return res.status(400).json({ message: "Invalid or missing test cases" });
+//     }
+//     console.log("[DEBUG] Test cases prepared successfully");
+
+//     // Determine Docker API endpoint
+//     console.log("[DEBUG] Determining Docker API endpoint for language:", language);
+//     const dockerEndpoints = {
+//       python: 'http://localhost:8084/compile',
+//       java: 'http://localhost:8083/compile',
+//       cpp: 'http://localhost:8081/compile',
+//       c: 'http://localhost:8082/compile',
+//     };
+//     const dockerEndpoint = dockerEndpoints[language.toLowerCase()];
+//     if (!dockerEndpoint) {
+//       console.error("[DEBUG] Unsupported programming language:", language);
+//       return res.status(400).json({ message: "Unsupported programming language" });
+//     }
+//     console.log("[DEBUG] Docker endpoint determined:", dockerEndpoint);
+
+//     // Send request to Docker API
+//     console.log("[DEBUG] Sending request to Docker API");
+//     const dockerRequest = {
+//       language: language.toLowerCase(),
+//       code: solution_code,
+//       testcases: testCases,
+//     };
+//     const dockerResponse = await axios.post(dockerEndpoint, dockerRequest);
+//     const testResults = dockerResponse.data;
+
+//     // Validate Docker response
+//     if (!Array.isArray(testResults) || testResults.length === 0) {
+//       console.error("[DEBUG] Invalid response from Docker API:", testResults);
+//       return res.status(500).json({ message: "Invalid response from Docker API" });
+//     }
+//     console.log("[DEBUG] Docker API response received:", testResults);
+
+//     // Handle submission mode
+//     if (mode === 'submit') {
+//       console.log("[DEBUG] Handling submission mode");
+//       const totalTests = testResults.length;
+//       const passedTests = testResults.filter((result) => result.success).length;
+//       const score = Math.round((passedTests / totalTests) * 100);
+//       const status = score === 100 ? 'pass' : score > 0 ? 'partial' : 'fail';
+
+//       console.log("[DEBUG] Calculated Score:", score, "Status:", status);
+
+//       // Save submission
+//       const submission = await StudentResults.create({
+//         student_id: studentId,
+//         assessment_id: question.assessment_id,
+//         round_id,
+//         question_id,
+//         question_type: 'coding',
+//         solution_code,
+//         language,
+//         question_points: question.question_points || 100,
+//         score,
+//       });
+//       console.log("[DEBUG] Submission saved:", submission);
+
+//       return res.status(201).json({
+//         message: "Code submitted successfully",
+//         submission,
+//         test_results: testResults,
+//       });
+//     }
+
+//     console.log("[DEBUG] Handling run mode");
+//     return res.status(200).json({
+//       message: "Code executed successfully",
+//       test_results: testResults,
+//     });
+//   } catch (error) {
+//     console.error("[DEBUG] Error in submitCode:", error);
+//     res.status(500).json({ message: "Error processing request", error: error.message });
+//   }
+// };
+
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Starting submitCode");
+//     console.log("[DEBUG] Request Body:", req.body);
+
+//     const studentId = req.user?.id; // Extracted from JWT
+//     if (!studentId) {
+//       console.error("[DEBUG] User ID is undefined");
+//       return res.status(401).json({ message: "Unauthorized: User ID is required" });
+//     }
+//     console.log("[DEBUG] Authenticated User ID:", studentId);
+
+//     const { round_id, question_id, language, solution_code, mode } = req.body;
+
+//     // Validate input
+//     if (!round_id || !question_id || !language || !solution_code || !mode) {
+//       console.error("[DEBUG] Missing required fields");
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+//     console.log("[DEBUG] Input validated successfully");
+
+//     // Fetch question details
+//     console.log("[DEBUG] Fetching question details for question_id:", question_id);
+//     const question = await CodingQuestion.findByPk(question_id);
+
+//     // Handle case where the question is not found
+//     if (!question) {
+//       console.error("[DEBUG] Coding question not found for ID:", question_id);
+//       return res.status(404).json({ message: "Coding question not found for the provided ID" });
+//     }
+//     console.log("[DEBUG] Question fetched successfully:", question);
+
+//     // Ensure the question belongs to the given round
+//     if (question.round_id !== round_id) {
+//       console.error("[DEBUG] Question does not belong to the specified round. Question round_id:", question.round_id);
+//       return res.status(400).json({ message: "Question does not belong to the specified round" });
+//     }
+//     console.log("[DEBUG] Round ID validated successfully");
+
+//     // Prepare test cases
+//     const testCases = req.body.testcases || question.test_cases;
+//     if (!testCases || !Array.isArray(testCases) || testCases.length === 0) {
+//       console.error("[DEBUG] Invalid or missing test cases");
+//       return res.status(400).json({ message: "Invalid or missing test cases" });
+//     }
+//     console.log("[DEBUG] Test cases prepared successfully");
+
+//     // Determine Docker API endpoint
+//     console.log("[DEBUG] Determining Docker API endpoint for language:", language);
+//     const dockerEndpoints = {
+//       python: 'http://localhost:8084/compile',
+//       java: 'http://localhost:8083/compile',
+//       cpp: 'http://localhost:8081/compile',
+//       c: 'http://localhost:8082/compile',
+//     };
+//     const dockerEndpoint = dockerEndpoints[language.toLowerCase()];
+//     if (!dockerEndpoint) {
+//       console.error("[DEBUG] Unsupported programming language:", language);
+//       return res.status(400).json({ message: "Unsupported programming language" });
+//     }
+//     console.log("[DEBUG] Docker endpoint determined:", dockerEndpoint);
+
+//     // Send request to Docker API
+//     console.log("[DEBUG] Sending request to Docker API");
+//     const dockerRequest = {
+//       language: language.toLowerCase(),
+//       code: solution_code,
+//       testcases: testCases,
+//     };
+//     const dockerResponse = await axios.post(dockerEndpoint, dockerRequest);
+//     const testResults = dockerResponse.data;
+
+//     // Validate Docker response
+//     if (!Array.isArray(testResults) || testResults.length === 0) {
+//       console.error("[DEBUG] Invalid response from Docker API:", testResults);
+//       return res.status(500).json({ message: "Invalid response from Docker API" });
+//     }
+//     console.log("[DEBUG] Docker API response received:", testResults);
+
+//     // Handle submission mode
+//     if (mode === 'submit') {
+//       console.log("[DEBUG] Handling submission mode");
+//       const totalTests = testResults.length;
+//       const passedTests = testResults.filter((result) => result.success).length;
+//       const score = Math.round((passedTests / totalTests) * 100);
+//       const status = score === 100 ? 'pass' : score > 0 ? 'partial' : 'fail';
+
+//       console.log("[DEBUG] Calculated Score:", score, "Status:", status);
+
+//       // Save submission
+//       const submission = await StudentResults.create({
+//         student_id: studentId,
+//         // assessment_id: question.assessment_id,
+//         round_id,
+//         question_id,
+//         question_type: 'coding',
+//         solution_code,
+//         language,
+//         question_points: question.question_points || 100,
+//         score,
+//       });
+//       console.log("[DEBUG] Submission saved:", submission);
+
+//       return res.status(201).json({
+//         message: "Code submitted successfully",
+//         submission,
+//         test_results: testResults,
+//       });
+//     }
+
+//     console.log("[DEBUG] Handling run mode");
+//     return res.status(200).json({
+//       message: "Code executed successfully",
+//       test_results: testResults,
+//     });
+//   } catch (error) {
+//     console.error("[DEBUG] Error in submitCode:", error);
+//     res.status(500).json({ message: "Error processing request", error: error.message });
+//   }
+// };
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Starting submitCode");
+//     console.log("[DEBUG] Request Body:", req.body);
+
+//     const studentId = req.user?.id; // Extracted from JWT payload
+//     if (!studentId) {
+//       console.error("[DEBUG] User ID is undefined");
+//       return res.status(401).json({ message: "Unauthorized: User ID is required" });
+//     }
+//     console.log("[DEBUG] Authenticated User ID:", studentId);
+
+//     const { round_id, question_id, language, solution_code, mode } = req.body;
+
+//     // Validate input
+//     if (!round_id || !question_id || !language || !solution_code || !mode) {
+//       console.error("[DEBUG] Missing required fields");
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+//     console.log("[DEBUG] Input validated successfully");
+
+//     // Fetch question details
+//     console.log("[DEBUG] Fetching question details for question_id:", question_id);
+//     const question = await CodingQuestion.findByPk(question_id);
+
+//     // Handle case where the question is not found
+//     if (!question) {
+//       console.error("[DEBUG] Coding question not found for ID:", question_id);
+//       return res.status(404).json({ message: "Coding question not found for the provided ID" });
+//     }
+//     console.log("[DEBUG] Question fetched successfully:", question);
+
+//     // Ensure the question belongs to the given round
+//     if (question.round_id !== round_id) {
+//       console.error("[DEBUG] Question does not belong to the specified round. Question round_id:", question.round_id);
+//       return res.status(400).json({ message: "Question does not belong to the specified round" });
+//     }
+//     console.log("[DEBUG] Round ID validated successfully");
+
+//     // Prepare test cases
+//     const testCases = req.body.testcases || question.test_cases;
+//     if (!testCases || !Array.isArray(testCases) || testCases.length === 0) {
+//       console.error("[DEBUG] Invalid or missing test cases");
+//       return res.status(400).json({ message: "Invalid or missing test cases" });
+//     }
+//     console.log("[DEBUG] Test cases prepared successfully");
+
+//     // Determine Docker API endpoint
+//     console.log("[DEBUG] Determining Docker API endpoint for language:", language);
+//     const dockerEndpoints = {
+//       python: 'http://localhost:8084/compile',
+//       java: 'http://localhost:8083/compile',
+//       cpp: 'http://localhost:8081/compile',
+//       c: 'http://localhost:8082/compile',
+//     };
+//     const dockerEndpoint = dockerEndpoints[language.toLowerCase()];
+//     if (!dockerEndpoint) {
+//       console.error("[DEBUG] Unsupported programming language:", language);
+//       return res.status(400).json({ message: "Unsupported programming language" });
+//     }
+//     console.log("[DEBUG] Docker endpoint determined:", dockerEndpoint);
+
+//     // Send request to Docker API
+//     console.log("[DEBUG] Sending request to Docker API");
+//     const dockerRequest = {
+//       language: language.toLowerCase(),
+//       code: solution_code,
+//       testcases: testCases,
+//     };
+//     const dockerResponse = await axios.post(dockerEndpoint, dockerRequest);
+//     const testResults = dockerResponse.data;
+
+//     // Validate Docker response
+//     if (!Array.isArray(testResults) || testResults.length === 0) {
+//       console.error("[DEBUG] Invalid response from Docker API:", testResults);
+//       return res.status(500).json({ message: "Invalid response from Docker API" });
+//     }
+//     console.log("[DEBUG] Docker API response received:", testResults);
+
+//     // Handle submission mode
+//     if (mode === 'submit') {
+//       console.log("[DEBUG] Handling submission mode");
+//       const totalTests = testResults.length;
+//       const passedTests = testResults.filter((result) => result.success).length;
+//       const score = Math.round((passedTests / totalTests) * 100);
+//       const status = score === 100 ? 'pass' : score > 0 ? 'partial' : 'fail';
+
+//       console.log("[DEBUG] Calculated Score:", score, "Status:", status);
+
+//       // Save submission
+//       const submission = await StudentResults.create({
+//         student_id: studentId,
+//         round_id, // Round ID for the assessment
+//         question_id,
+//         question_type: 'coding',
+//         solution_code,
+//         language,
+//         question_points: question.question_points || 100,
+//         score,
+//       });
+//       console.log("[DEBUG] Submission saved:", submission);
+
+//       return res.status(201).json({
+//         message: "Code submitted successfully",
+//         submission,
+//         test_results: testResults,
+//       });
+//     }
+
+//     console.log("[DEBUG] Handling run mode");
+//     return res.status(200).json({
+//       message: "Code executed successfully",
+//       test_results: testResults,
+//     });
+//   } catch (error) {
+//     console.error("[DEBUG] Error in submitCode:", error);
+//     res.status(500).json({ message: "Error processing request", error: error.message });
+//   }
+// };
+
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Starting submitCode");
+//     console.log("[DEBUG] Request Body:", req.body);
+
+//     const studentId = req.user?.id; // Extracted from JWT payload
+//     if (!studentId) {
+//       console.error("[DEBUG] User ID is undefined");
+//       return res.status(401).json({ message: "Unauthorized: User ID is required" });
+//     }
+//     console.log("[DEBUG] Authenticated User ID:", studentId);
+
+//     const { round_id, question_id, language, solution_code, mode } = req.body;
+
+//     // Validate input
+//     if (!round_id || !question_id || !language || !solution_code || !mode) {
+//       console.error("[DEBUG] Missing required fields");
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+//     console.log("[DEBUG] Input validated successfully");
+
+//     // Fetch question details
+//     console.log("[DEBUG] Fetching question details for question_id:", question_id);
+//     const question = await CodingQuestion.findByPk(question_id);
+
+//     if (!question) {
+//       console.error("[DEBUG] Coding question not found for ID:", question_id);
+//       return res.status(404).json({ message: "Coding question not found for the provided ID" });
+//     }
+//     console.log("[DEBUG] Question fetched successfully:", question);
+
+//     if (question.round_id !== round_id) {
+//       console.error("[DEBUG] Question does not belong to the specified round. Question round_id:", question.round_id);
+//       return res.status(400).json({ message: "Question does not belong to the specified round" });
+//     }
+//     console.log("[DEBUG] Round ID validated successfully");
+
+//     const testCases = req.body.testcases || question.test_cases;
+//     if (!testCases || !Array.isArray(testCases) || testCases.length === 0) {
+//       console.error("[DEBUG] Invalid or missing test cases");
+//       return res.status(400).json({ message: "Invalid or missing test cases" });
+//     }
+//     console.log("[DEBUG] Test cases prepared successfully");
+
+//     const dockerEndpoints = {
+//       python: "http://localhost:8084/compile",
+//       java: "http://localhost:8083/compile",
+//       cpp: "http://localhost:8081/compile",
+//       c: "http://localhost:8082/compile",
+//     };
+//     const dockerEndpoint = dockerEndpoints[language.toLowerCase()];
+//     if (!dockerEndpoint) {
+//       console.error("[DEBUG] Unsupported programming language:", language);
+//       return res.status(400).json({ message: "Unsupported programming language" });
+//     }
+//     console.log("[DEBUG] Docker endpoint determined:", dockerEndpoint);
+
+//     console.log("[DEBUG] Sending request to Docker API");
+//     const dockerRequest = {
+//       language: language.toLowerCase(),
+//       code: solution_code,
+//       testcases: testCases,
+//     };
+//     const dockerResponse = await axios.post(dockerEndpoint, dockerRequest);
+//     const testResults = dockerResponse.data;
+
+//     if (!Array.isArray(testResults) || testResults.length === 0) {
+//       console.error("[DEBUG] Invalid response from Docker API:", testResults);
+//       return res.status(500).json({ message: "Invalid response from Docker API" });
+//     }
+//     console.log("[DEBUG] Docker API response received:", testResults);
+
+//     if (mode === "submit") {
+//       console.log("[DEBUG] Handling submission mode");
+//       const totalTests = testResults.length;
+//       const passedTests = testResults.filter((result) => result.success).length;
+//       const score = Math.round((passedTests / totalTests) * 100);
+//       const status = score === 100 ? "pass" : score > 0 ? "partial" : "fail";
+
+//       console.log("[DEBUG] Calculated Score:", score, "Status:", status);
+
+//       // Check for existing submission
+//       console.log("[DEBUG] Checking for existing submission");
+//       const existingSubmission = await StudentResults.findOne({
+//         where: {
+//           student_id: studentId,
+//           round_id,
+//           question_id,
+//         },
+//       });
+
+//       if (existingSubmission) {
+//         console.log("[DEBUG] Existing submission found. Updating...");
+//         await existingSubmission.update({
+//           solution_code,
+//           language,
+//           score,
+//           question_points: question.question_points || 100,
+//           updatedAt: new Date(),
+//         });
+//         return res.status(200).json({
+//           message: "Submission updated successfully",
+//           submission: existingSubmission,
+//           test_results: testResults,
+//         });
+//       }
+
+//       console.log("[DEBUG] No existing submission found. Creating new...");
+//       const newSubmission = await StudentResults.create({
+//         student_id: studentId,
+//         round_id,
+//         question_id,
+//         question_type: "coding",
+//         solution_code,
+//         language,
+//         question_points: question.question_points || 100,
+//         score,
+//       });
+//       console.log("[DEBUG] New submission saved:", newSubmission);
+
+//       return res.status(201).json({
+//         message: "Code submitted successfully",
+//         submission: newSubmission,
+//         test_results: testResults,
+//       });
+//     }
+
+//     console.log("[DEBUG] Handling run mode");
+//     return res.status(200).json({
+    
+//       message: "Code executed successfully",
+      
+//       test_results: testResults,
+      
+//     });
+//     console.log("[DEBUG] Test Results being sent:", testResults);
+//   } catch (error) {
+//     console.error("[DEBUG] Error in submitCode:", error);
+//     res.status(500).json({ message: "Error processing request", error: error.message });
+//   }
+// };
+
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Starting submitCode");
+//     console.log("[DEBUG] Request Body:", req.body);
+
+//     const studentId = req.user?.id; // Extracted from JWT payload
+//     if (!studentId) {
+//       console.error("[DEBUG] User ID is undefined");
+//       return res.status(401).json({ message: "Unauthorized: User ID is required" });
+//     }
+//     console.log("[DEBUG] Authenticated User ID:", studentId);
+
+//     const { round_id, question_id, language, solution_code, mode } = req.body;
+
+//     // Validate input
+//     if (!round_id || !question_id || !language || !solution_code || !mode) {
+//       console.error("[DEBUG] Missing required fields");
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+//     console.log("[DEBUG] Input validated successfully");
+
+//     // Fetch question details
+//     console.log("[DEBUG] Fetching question details for question_id:", question_id);
+//     const question = await CodingQuestion.findByPk(question_id);
+
+//     if (!question) {
+//       console.error("[DEBUG] Coding question not found for ID:", question_id);
+//       return res.status(404).json({ message: "Coding question not found for the provided ID" });
+//     }
+//     console.log("[DEBUG] Question fetched successfully:", question);
+
+//     if (question.round_id !== round_id) {
+//       console.error("[DEBUG] Question does not belong to the specified round. Question round_id:", question.round_id);
+//       return res.status(400).json({ message: "Question does not belong to the specified round" });
+//     }
+//     console.log("[DEBUG] Round ID validated successfully");
+
+//     const testCases = req.body.testcases || question.test_cases;
+//     if (!testCases || !Array.isArray(testCases) || testCases.length === 0) {
+//       console.error("[DEBUG] Invalid or missing test cases");
+//       return res.status(400).json({ message: "Invalid or missing test cases" });
+//     }
+//     console.log("[DEBUG] Test cases prepared successfully");
+
+//     const dockerEndpoints = {
+//       python: "http://localhost:8084/compile",
+//       java: "http://localhost:8083/compile",
+//       cpp: "http://localhost:8081/compile",
+//       c: "http://localhost:8082/compile",
+//     };
+//     const dockerEndpoint = dockerEndpoints[language.toLowerCase()];
+//     if (!dockerEndpoint) {
+//       console.error("[DEBUG] Unsupported programming language:", language);
+//       return res.status(400).json({ message: "Unsupported programming language" });
+//     }
+//     console.log("[DEBUG] Docker endpoint determined:", dockerEndpoint);
+
+//     console.log("[DEBUG] Sending request to Docker API");
+//     const dockerRequest = {
+//       language: language.toLowerCase(),
+//       code: solution_code,
+//       testcases: testCases,
+//     };
+//     const dockerResponse = await axios.post(dockerEndpoint, dockerRequest);
+//     const testResults = dockerResponse.data;
+
+//     if (!Array.isArray(testResults) || testResults.length === 0) {
+//       console.error("[DEBUG] Invalid response from Docker API:", testResults);
+//       return res.status(500).json({ message: "Invalid response from Docker API" });
+//     }
+//     console.log("[DEBUG] Docker API response received:", testResults);
+
+//     if (mode === "submit") {
+//       console.log("[DEBUG] Handling submission mode");
+//       const totalTests = testResults.length;
+//       const passedTests = testResults.filter((result) => result.success).length;
+//       const score = Math.round((passedTests / totalTests) * 100);
+//       const status = score === 100 ? "pass" : score > 0 ? "partial" : "fail";
+
+//       console.log("[DEBUG] Calculated Score:", score, "Status:", status);
+
+//       // Check for existing submission
+//       console.log("[DEBUG] Checking for existing submission");
+//       const existingSubmission = await StudentResults.findOne({
+//         where: {
+//           student_id: studentId,
+//           round_id,
+//           question_id,
+//         },
+//       });
+
+//       if (existingSubmission) {
+//         console.log("[DEBUG] Existing submission found. Updating...");
+//         await existingSubmission.update({
+//           solution_code,
+//           language,
+//           score,
+//           question_points: question.question_points || 100,
+//           updatedAt: new Date(),
+//         });
+//         console.log("[DEBUG] Updated submission successfully");
+//         console.log("[DEBUG] Returning test results to frontend:", testResults);
+//         return res.status(200).json({
+//           message: "Submission updated successfully",
+//           submission: existingSubmission,
+//           test_results: testResults,
+//         });
+//       }
+
+//       console.log("[DEBUG] No existing submission found. Creating new...");
+//       const newSubmission = await StudentResults.create({
+//         student_id: studentId,
+//         round_id,
+//         question_id,
+//         question_type: "coding",
+//         solution_code,
+//         language,
+//         question_points: question.question_points || 100,
+//         score,
+//       });
+//       console.log("[DEBUG] New submission saved:", newSubmission);
+
+//       console.log("[DEBUG] Returning test results to frontend:", testResults);
+//       return res.status(201).json({
+//         message: "Code submitted successfully",
+//         submission: newSubmission,
+//         test_results: testResults,
+//       });
+//     }
+
+//     console.log("[DEBUG] Handling run mode");
+//     console.log("[DEBUG] Returning test results to frontend:", testResults);
+//     return res.status(200).json({
+//       message: "Code executed successfully",
+//       test_results: testResults,
+//     });
+//   } catch (error) {
+//     console.error("[DEBUG] Error in submitCode:", error);
+//     res.status(500).json({ message: "Error processing request", error: error.message });
+//   }
+// };
+
+
+// exports.submitCode = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Starting submitCode");
+//     console.log("[DEBUG] Request Body:", req.body);
+
+//     const studentId = req.user?.id; // Extracted from JWT payload
+//     if (!studentId) {
+//       console.error("[DEBUG] User ID is undefined");
+//       return res.status(401).json({ message: "Unauthorized: User ID is required" });
+//     }
+//     console.log("[DEBUG] Authenticated User ID:", studentId);
+
+//     const { round_id, question_id, language, solution_code, mode, question_points } = req.body;
+
+//     // Validate input
+//     if (!round_id || !question_id || !language || !solution_code || !mode || !question_points) {
+//       console.error("[DEBUG] Missing required fields");
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+//     console.log("[DEBUG] Input validated successfully");
+
+//     // Fetch question details
+//     console.log("[DEBUG] Fetching question details for question_id:", question_id);
+//     const question = await CodingQuestion.findByPk(question_id);
+
+//     if (!question) {
+//       console.error("[DEBUG] Coding question not found for ID:", question_id);
+//       return res.status(404).json({ message: "Coding question not found for the provided ID" });
+//     }
+//     console.log("[DEBUG] Question fetched successfully:", question);
+
+//     if (question.round_id !== round_id) {
+//       console.error("[DEBUG] Question does not belong to the specified round. Question round_id:", question.round_id);
+//       return res.status(400).json({ message: "Question does not belong to the specified round" });
+//     }
+//     console.log("[DEBUG] Round ID validated successfully");
+
+//     const testCases = req.body.testcases || question.test_cases;
+//     if (!testCases || !Array.isArray(testCases) || testCases.length === 0) {
+//       console.error("[DEBUG] Invalid or missing test cases");
+//       return res.status(400).json({ message: "Invalid or missing test cases" });
+//     }
+//     console.log("[DEBUG] Test cases prepared successfully");
+
+//     // Docker API logic...
+
+//     if (mode === "submit") {
+//       console.log("[DEBUG] Handling submission mode");
+
+//       const existingSubmission = await StudentResults.findOne({
+//         where: { student_id: studentId, round_id, question_id },
+//       });
+
+//       if (existingSubmission) {
+//         console.log("[DEBUG] Existing submission found. Updating...");
+//         await existingSubmission.update({
+//           solution_code,
+//           language,
+//           question_points, // Store the points
+//           score, // Pass calculated score
+//         });
+//         console.log("[DEBUG] Updated submission successfully");
+//       } else {
+//         console.log("[DEBUG] Creating new submission...");
+//         const newSubmission = await StudentResults.create({
+//           student_id: studentId,
+//           round_id,
+//           question_id,
+//           solution_code,
+//           language,
+//           question_points, // Store the points
+//           score, // Pass calculated score
+//         });
+//         console.log("[DEBUG] Created new submission successfully:", newSubmission);
+//       }
+//     }
+
+//     console.log("[DEBUG] Returning test results to frontend");
+//     return res.status(200).json({
+//       message: "Code executed successfully",
+//       test_results: testResults,
+//     });
+//   } catch (error) {
+//     console.error("[DEBUG] Error in submitCode:", error);
+//     return res.status(500).json({ message: "Error processing request", error: error.message });
+//   }
+// };
+
+
+
+exports.submitCode = async (req, res) => {
+  try {
+    console.log("[DEBUG] Starting submitCode");
+    console.log("[DEBUG] Request Body:", req.body);
+
+    const studentId = req.user?.id; // Extracted from JWT payload
+    if (!studentId) {
+      console.error("[DEBUG] User ID is undefined");
+      return res.status(401).json({ message: "Unauthorized: User ID is required" });
+    }
+    console.log("[DEBUG] Authenticated User ID:", studentId);
+
+    const { round_id, question_id, language, solution_code, mode, question_points } = req.body;
+
+    // Validate input
+    if (!round_id || !question_id || !language || !solution_code || !mode || !question_points) {
+      console.error("[DEBUG] Missing required fields");
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    console.log("[DEBUG] Input validated successfully");
+
+    // Fetch question details
+    console.log("[DEBUG] Fetching question details for question_id:", question_id);
+    const question = await CodingQuestion.findByPk(question_id);
+
+    if (!question) {
+      console.error("[DEBUG] Coding question not found for ID:", question_id);
+      return res.status(404).json({ message: "Coding question not found for the provided ID" });
+    }
+    console.log("[DEBUG] Question fetched successfully:", question);
+
+    if (question.round_id !== round_id) {
+      console.error("[DEBUG] Question does not belong to the specified round. Question round_id:", question.round_id);
+      return res.status(400).json({ message: "Question does not belong to the specified round" });
+    }
+    console.log("[DEBUG] Round ID validated successfully");
+
+    const testCases = req.body.testcases || question.test_cases;
+    if (!testCases || !Array.isArray(testCases) || testCases.length === 0) {
+      console.error("[DEBUG] Invalid or missing test cases");
+      return res.status(400).json({ message: "Invalid or missing test cases" });
+    }
+    console.log("[DEBUG] Test cases prepared successfully");
+
+    const dockerEndpoints = {
+      python: "http://localhost:8084/compile",
+      java: "http://localhost:8083/compile",
+      cpp: "http://localhost:8081/compile",
+      c: "http://localhost:8082/compile",
+    };
+    const dockerEndpoint = dockerEndpoints[language.toLowerCase()];
+    if (!dockerEndpoint) {
+      console.error("[DEBUG] Unsupported programming language:", language);
+      return res.status(400).json({ message: "Unsupported programming language" });
+    }
+    console.log("[DEBUG] Docker endpoint determined:", dockerEndpoint);
+
+    console.log("[DEBUG] Sending request to Docker API");
+    const dockerRequest = {
+      language: language.toLowerCase(),
+      code: solution_code,
+      testcases: testCases,
+    };
+    const dockerResponse = await axios.post(dockerEndpoint, dockerRequest);
+    const testResults = dockerResponse.data;
+
+    if (!Array.isArray(testResults) || testResults.length === 0) {
+      console.error("[DEBUG] Invalid response from Docker API:", testResults);
+      return res.status(500).json({ message: "Invalid response from Docker API" });
+    }
+    console.log("[DEBUG] Docker API response received:", testResults);
+
+    if (mode === "submit") {
+      console.log("[DEBUG] Handling submission mode");
+
+      // Calculate score and status
+      const totalTests = testResults.length;
+      const passedTests = testResults.filter((result) => result.success).length;
+      const score = Math.round((passedTests / totalTests) * 100);
+      const status = score === 100 ? "pass" : score > 0 ? "partial" : "fail";
+
+      console.log("[DEBUG] Calculated Score:", score, "Status:", status);
+
+      // Check for existing submission
+      console.log("[DEBUG] Checking for existing submission");
+      const existingSubmission = await StudentResults.findOne({
+        where: {
+          student_id: studentId,
+          round_id,
+          question_id,
+        },
+      });
+
+      if (existingSubmission) {
+        console.log("[DEBUG] Existing submission found. Updating...");
+        await existingSubmission.update({
+          solution_code,
+          language,
+          score,
+          question_points,
+          updatedAt: new Date(),
+        });
+        console.log("[DEBUG] Updated submission successfully");
+        return res.status(200).json({
+          message: "Submission updated successfully",
+          submission: existingSubmission,
+          test_results: testResults,
+        });
+      }
+
+      console.log("[DEBUG] No existing submission found. Creating new...");
+      const newSubmission = await StudentResults.create({
+        student_id: studentId,
+        round_id,
+        question_id,
+        question_type: "coding",
+        solution_code,
+        language,
+        question_points,
+        score,
+      });
+      console.log("[DEBUG] New submission saved:", newSubmission);
+
+      return res.status(201).json({
+        message: "Code submitted successfully",
+        submission: newSubmission,
+        test_results: testResults,
+      });
+    }
+
+    console.log("[DEBUG] Handling run mode");
+    return res.status(200).json({
+      message: "Code executed successfully",
+      test_results: testResults,
+    });
+  } catch (error) {
+    console.error("[DEBUG] Error in submitCode:", error);
+    res.status(500).json({ message: "Error processing request", error: error.message });
+  }
+};
+
+
+
+// exports.submitMcqAnswer = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Starting submitMcqAnswer");
+//     console.log("[DEBUG] Request Body:", req.body);
+
+//     const { student_id, round_id, question_id, submitted_options, points } = req.body;
+
+//     // Validate the input
+//     if (!student_id || !round_id || !question_id || !submitted_options || points === undefined) {
+//       console.error("[DEBUG] Missing required fields");
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+//     console.log("[DEBUG] Input validated successfully");
+
+//     // Check if the answer already exists for this round and question
+//     console.log("[DEBUG] Checking for existing submission");
+//     let answer = await StudentResults.findOne({
+//       where: {
+//         student_id,
+//         round_id,
+//         question_id,
+//         question_type: "mcq",
+//       },
+//     });
+
+//     if (answer) {
+//       console.log("[DEBUG] Existing submission found. Updating...");
+//       await answer.update({
+//         submitted_options,
+//         score: points,
+//         updatedAt: new Date(),
+//       });
+//       console.log("[DEBUG] Submission updated successfully");
+//     } else {
+//       console.log("[DEBUG] No existing submission found. Creating new...");
+//       answer = await StudentResults.create({
+//         student_id,
+//         round_id,
+//         question_id,
+//         question_type: "mcq",
+//         submitted_options,
+//         score: points,
+//         question_points: points, // Assuming full points for correct answers
+//         createdAt: new Date(),
+//         updatedAt: new Date(),
+//       });
+//       console.log("[DEBUG] New submission saved:", answer);
+//     }
+
+//     return res.status(200).json({ message: "Answer submitted successfully", answer });
+//   } catch (error) {
+//     console.error("[DEBUG] Error in submitMcqAnswer:", error);
+//     res.status(500).json({ message: "Error submitting answer", error: error.message });
+//   }
+// };
+
+
+
+// exports.submitMcqAnswer = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Starting submitMcqAnswer");
+//     console.log("[DEBUG] Request Body:", req.body);
+
+//     // Extract student_id from JWT or request body
+//     const student_id = req.user?.id || req.body.student_id;
+
+//     // Log extracted student_id for debugging
+//     console.log("[DEBUG] Extracted Student ID:", student_id);
+
+//     const { round_id, question_id, submitted_options, points } = req.body;
+
+//     // Validate the input
+//     if (!student_id || !round_id || !question_id || !submitted_options || points === undefined) {
+//       console.error("[DEBUG] Missing required fields:", {
+//         student_id,
+//         round_id,
+//         question_id,
+//         submitted_options,
+//         points,
+//       });
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+//     console.log("[DEBUG] Input validated successfully");
+
+//     // Check if the answer already exists for this round and question
+//     console.log("[DEBUG] Checking for existing submission");
+//     let answer = await StudentResults.findOne({
+//       where: {
+//         student_id,
+//         round_id,
+//         question_id,
+//         question_type: "mcq",
+//       },
+//     });
+
+//     if (answer) {
+//       console.log("[DEBUG] Existing submission found. Updating...");
+//       await answer.update({
+//         submitted_options,
+//         score: points,
+//         updatedAt: new Date(),
+//       });
+//       console.log("[DEBUG] Submission updated successfully");
+//     } else {
+//       console.log("[DEBUG] No existing submission found. Creating new...");
+//       answer = await StudentResults.create({
+//         student_id,
+//         round_id,
+//         question_id,
+//         question_type: "mcq",
+//         submitted_options,
+//         score: points,
+//         question_points: points,
+//         createdAt: new Date(),
+//         updatedAt: new Date(),
+//       });
+//       console.log("[DEBUG] New submission saved:", answer);
+//     }
+
+//     return res
+//       .status(200)
+//       .json({ message: "Answer submitted successfully", answer });
+//   } catch (error) {
+//     console.error("[DEBUG] Error in submitMcqAnswer:", error);
+//     res
+//       .status(500)
+//       .json({ message: "Error submitting answer", error: error.message });
+//   }
+// };
+
+
+
+// exports.submitMcqAnswer = async (req, res) => {
+//   try {
+//     console.log("[DEBUG] Starting submitMcqAnswer");
+//     console.log("[DEBUG] Request Body:", req.body);
+
+//     // Extract student_id from JWT or request body
+//     const student_id = req.user?.id || req.body.student_id;
+
+//     console.log("[DEBUG] Extracted Student ID:", student_id);
+
+//     const { round_id, question_id, submitted_options } = req.body;
+
+//     // Validate the input
+//     if (!student_id || !round_id || !question_id || !submitted_options) {
+//       console.error("[DEBUG] Missing required fields:", {
+//         student_id,
+//         round_id,
+//         question_id,
+//         submitted_options,
+//       });
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+//     console.log("[DEBUG] Input validated successfully");
+
+//     // Fetch the correct answers from the MCQQuestion table
+//     console.log("[DEBUG] Fetching correct answers for question_id:", question_id);
+//     const mcqQuestion = await MCQQuestion.findByPk(question_id, {
+//       attributes: ['correct_answers', 'is_single_answer', 'difficulty'],
+//     });
+
+//     if (!mcqQuestion) {
+//       console.error("[DEBUG] MCQ question not found for ID:", question_id);
+//       return res.status(404).json({ message: "MCQ question not found" });
+//     }
+
+//     const correctAnswers = mcqQuestion.correct_answers || [];
+//     const isSingleAnswer = mcqQuestion.is_single_answer;
+//     const difficulty = mcqQuestion.difficulty;
+
+//     console.log("[DEBUG] Correct Answers:", correctAnswers);
+//     console.log("[DEBUG] Is Single Answer:", isSingleAnswer);
+
+//     // Determine points based on difficulty
+//     const difficultyMapping = {
+//       Level1: 100,
+//       Level2: 200,
+//       Level3: 300,
+//       Level4: 400,
+//       Level5: 500,
+//     };
+//     let points = difficultyMapping[difficulty] || 100;
+
+//     // Check if the submitted answers are correct
+//     let isAnswerCorrect = false;
+
+//     if (isSingleAnswer) {
+//       isAnswerCorrect =
+//         submitted_options.length === 1 &&
+//         correctAnswers.includes(submitted_options[0]);
+//     } else {
+//       isAnswerCorrect =
+//         submitted_options.length === correctAnswers.length &&
+//         submitted_options.every((option) => correctAnswers.includes(option));
+//     }
+
+//     if (!isAnswerCorrect) {
+//       points = 0; // Set points to 0 for incorrect answers
+//     }
+
+//     console.log("[DEBUG] Is Answer Correct:", isAnswerCorrect);
+//     console.log("[DEBUG] Points Awarded:", points);
+
+//     // Check if the answer already exists for this round and question
+//     console.log("[DEBUG] Checking for existing submission");
+//     let answer = await StudentResults.findOne({
+//       where: {
+//         student_id,
+//         round_id,
+//         question_id,
+//         question_type: "mcq",
+//       },
+//     });
+
+//     if (answer) {
+//       console.log("[DEBUG] Existing submission found. Updating...");
+//       await answer.update({
+//         submitted_options,
+//         score: points,
+//         updatedAt: new Date(),
+//       });
+//       console.log("[DEBUG] Submission updated successfully");
+//     } else {
+//       console.log("[DEBUG] No existing submission found. Creating new...");
+//       answer = await StudentResults.create({
+//         student_id,
+//         round_id,
+//         question_id,
+//         question_type: "mcq",
+//         submitted_options,
+//         score: points,
+//         question_points: points,
+//         createdAt: new Date(),
+//         updatedAt: new Date(),
+//       });
+//       console.log("[DEBUG] New submission saved:", answer);
+//     }
+
+//     return res.status(200).json({
+//       message: "Answer submitted successfully",
+//       score: points, // Only return the score to the frontend
+//     });
+//   } catch (error) {
+//     console.error("[DEBUG] Error in submitMcqAnswer:", error);
+//     res.status(500).json({ message: "Error submitting answer", error: error.message });
+//   }
+// };
+
+
+
+exports.submitMcqAnswer = async (req, res) => {
+  try {
+    console.log("[DEBUG] Starting submitMcqAnswer");
+    console.log("[DEBUG] Request Body:", req.body);
+
+    const student_id = req.user?.id || req.body.student_id;
+    const { round_id, question_id, submitted_options } = req.body;
+
+    if (!student_id || !round_id || !question_id || !submitted_options) {
+      console.error("[DEBUG] Missing required fields");
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    console.log("[DEBUG] Input validated successfully");
+
+    // Process the submission
+    console.log("[DEBUG] Checking for existing submission");
+    let answer = await StudentResults.findOne({
+      where: {
+        student_id,
+        round_id,
+        question_id,
+        question_type: "mcq",
+      },
+    });
+
+    if (answer) {
+      console.log("[DEBUG] Existing submission found. Updating...");
+      await answer.update({
+        submitted_options,
+        updatedAt: new Date(),
+      });
+      console.log("[DEBUG] Submission updated successfully");
+    } else {
+      console.log("[DEBUG] No existing submission found. Creating new...");
+      answer = await StudentResults.create({
+        student_id,
+        round_id,
+        question_id,
+        question_type: "mcq",
+        submitted_options,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      console.log("[DEBUG] New submission saved:", answer);
+    }
+
+    return res.status(200).json({ message: "Answer submitted successfully" });
+  } catch (error) {
+    console.error("[DEBUG] Error in submitMcqAnswer:", error);
+    res.status(500).json({ message: "Error submitting answer", error: error.message });
+  }
+};
 
