@@ -6,6 +6,7 @@ const adminController = require('../controllers/adminController');
 const assessmentController = require('../controllers/assessmentController');
 
 
+
 router.post('/login', studentController.studentLogin);
 router.post('/add-student',verifyAdmin,  studentController.createStudent);
 
@@ -43,6 +44,7 @@ router.get('/coding-domains',verifyStudent, adminController.getAllCodingDomains)
 
 // router.get('/mcq-questions/domain/:domain_id', verifyStudent, studentController.getMCQQuestionsByDomainForStudents);
 // router.get('/get-coding-questions/domains/:domain_id',verifyStudent, studentController.getCodingQuestionsByDomainForStudents);
+
 
 
 router.get('/mcq-questions/domain/:domain_id',verifyStudent,  adminController.getMCQQuestionsByDomain);

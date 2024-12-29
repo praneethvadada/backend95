@@ -2051,6 +2051,7 @@ exports.getMCQQuestionsByDomain = async (req, res) => {
 
 
 
+
 // exports.updateCodingQuestionsDomain = async (req, res) => {
 //   try {
 //     const { question_ids, codingquestiondomain_id } = req.body; // Extract question IDs and new domain ID from request body
