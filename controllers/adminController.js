@@ -1,6 +1,8 @@
 ﻿const multer = require('multer');
 const {AssessmentQuestion , MCQDomain, CodingQuestionDomain, Admin, AllowedLanguage,Trainer,StudentMcqAnswer   } = require('../models');
-const bcrypt = require('bcrypt');
+// const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
+
 const jwt = require('jsonwebtoken');
 // const { CodingQuestion,  } = require('../models');
 const { AssessmentRound, Assessment, CodingQuestion, PracticeQuestion, MCQQuestion, StudentSubmission, Batch} = require('../models');

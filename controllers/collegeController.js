@@ -1,6 +1,8 @@
 const { Op } = require('sequelize'); // To use Sequelize operators (like [Op.ne] for not equal) 
 const jwt = require('jsonwebtoken');
+// const bcrypt = require('bcryptjs');
 const bcrypt = require('bcryptjs');
+
 const { College } = require('../models');
 const multer = require('multer');
 const storage = multer.memoryStorage(); // Store files in memory (as a buffer)

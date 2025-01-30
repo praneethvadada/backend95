@@ -1,5 +1,7 @@
 const { Trainer, MCQQuestion } = require('../models');
-const bcrypt = require('bcrypt');
+// const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
+
 const jwt = require('jsonwebtoken');
 const { CodingQuestion, AllowedLanguage , CodingQuestionLanguage } = require('../models');
 const crypto = require('crypto');

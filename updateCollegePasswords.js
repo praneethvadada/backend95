@@ -1,4 +1,6 @@
-const bcrypt = require('bcrypt');
+// const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
+
 const { Trainer } = require('./models'); // Adjust the path as per your project structure
 
 async function updateCollegePasswords() {

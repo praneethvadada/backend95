@@ -1,6 +1,8 @@
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
+// const bcrypt = require('bcryptjs');
 const bcrypt = require('bcryptjs');
+
 const {AssessmentQuestion, StudentMcqAnswer , StudentSubmission, BatchPracticeQuestion, CodingQuestion, MCQQuestion, Student, Batch, College} = require('../models');
 const db = require('../models');
 const { Op } = require('sequelize');
