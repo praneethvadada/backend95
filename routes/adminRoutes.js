@@ -11,6 +11,7 @@ router.put('/edit/:id',verifyAdmin, adminController.updateAdmin);
 router.delete('/delete/:id', verifyAdmin, adminController.deleteAdmin);
 
 
+
 //Route to add a new programming languages
 router.post('/add-language', verifyAdmin, adminController.addLanguage);
 

@@ -33,6 +33,9 @@ router.get('/overall-students-fetch', verifyAdmin, studentController.getAllStude
 
 
 
+
+
+
 router.get('/search-students-collegewise/:college_id', studentController.searchStudentsByCollege);
 
 router.get('/search-students-batchwise/:batch_id', studentController.searchStudentsByBatch);
@@ -51,10 +54,10 @@ router.get('/mcq-questions/domain/:domain_id',verifyStudent,  adminController.ge
 router.get('/coding-questions/domain/:domain_id',verifyStudent, adminController.getCodingQuestionsByDomain);
 //adminController.getCodingQuestionsByDomain
 // router.get('/admin/coding-questions/domain/:domain_id',verifyAdmin, adminController.getCodingQuestionsByDomain);
-
+ 
 router.post('/practice-coding-question-submit',verifyStudent, studentController.submitCode);
 
-router.post('/submit-answer', studentController.submitAnswer);
+router.post('/submit-answer', verifyStudent, studentController.submitAnswer);
 router.post('/mark-question', studentController.toggleMarkQuestion);
 router.post('/report-question', studentController.reportQuestion);
 router.post('/auto-save-code',verifyStudent , studentController.saveCode);

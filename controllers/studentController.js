@@ -9,7 +9,6 @@ const { Op } = require('sequelize');
 
 
 
-
 // Controller to create a new student
 exports.createStudent = async (req, res) => {
   const { name, email, password, batch_id, roll_no} = req.body;
@@ -555,40 +554,297 @@ exports.getMCQQuestionsByDomainForStudents = async (req, res) => {
 };
 
 
+
+// exports.submitAnswer = async (req, res) => {
+//   try {
+//     const { student_id, domain_id, question_id, submitted_options, points } = req.body;
+
+//     // Check if the answer already exists
+//     let answer = await StudentMcqAnswer.findOne({
+//       where: { student_id, domain_id, question_id }
+//     });
+
+//     if (answer) {
+//       // Update existing answer
+//       await answer.update({
+//         submitted_options,
+//         is_attempted: true,
+//         points
+//       });
+//     } else {
+//       // Create new answer
+//       answer = await StudentMcqAnswer.create({
+//         student_id,
+//         domain_id,
+//         question_id,
+//         submitted_options,
+//         is_attempted: true,
+//         points
+//       });
+//     }
+
+//     res.status(200).json({ message: 'Answer submitted successfully', answer });
+//   } catch (error) {
+//     console.error('Error submitting answer:', error);
+//     res.status(500).json({ message: 'Error submitting answer', error });
+//   }
+// };
+
+
+// exports.submitAnswer = async (req, res) => {
+//   try {
+//     const { student_id, domain_id, question_id, submitted_options, points } = req.body;
+
+//     const question = await MCQQuestion.findOne({
+//       where: { id: question_id },
+//       attributes: ['id', 'correct_answers'],
+//       raw: true
+//     });
+
+//     if (!question) {
+//       return res.status(404).json({ message: 'Question not found' });
+//     }
+
+//     let answer = await StudentMcqAnswer.findOne({
+//       where: { student_id, domain_id, question_id }
+//     });
+
+//     if (answer) {
+//       await answer.update({
+//         submitted_options,
+//         is_attempted: 1,
+//         points
+//       });
+//     } else {
+//       answer = await StudentMcqAnswer.create({
+//         student_id,
+//         domain_id,
+//         question_id,
+//         submitted_options,
+//         is_attempted: 1,
+//         points
+//       });
+//     }
+
+//     res.status(200).json({
+//       message: 'Answer submitted successfully',
+//       answer,
+//       correct_answers: question.correct_answers
+//     });
+//   } catch (error) {
+//     console.error('Error submitting answer:', error);
+//     res.status(500).json({ message: 'Error submitting answer', error });
+//   }
+// };
+
+
+
+
+// exports.submitAnswer = async (req, res) => {
+//   try {
+//     const student_id = req.user.id; // Extracted from the JWT token by verifyStudent middleware
+//     const { domain_id, question_id, submitted_options, points } = req.body;
+
+//     const question = await MCQQuestion.findOne({
+//       where: { id: question_id },
+//       attributes: ['id', 'correct_answers'],
+//       raw: true
+//     });
+
+//     if (!question) {
+//       return res.status(404).json({ message: 'Question not found' });
+//     }
+
+//     let answer = await StudentMcqAnswer.findOne({
+//       where: { student_id, domain_id, question_id }
+//     });
+
+//     if (answer) {
+//       await answer.update({
+//         submitted_options,
+//         is_attempted: 1,
+//         points
+//       });
+//     } else {
+//       answer = await StudentMcqAnswer.create({
+//         student_id,
+//         domain_id,
+//         question_id,
+//         submitted_options,
+//         is_attempted: 1,
+//         points
+//       });
+//     }
+
+//     res.status(200).json({
+//       message: 'Answer submitted successfully',
+//       answer,
+//       correct_answers: question.correct_answers
+//     });
+//   } catch (error) {
+//     console.error('Error submitting answer:', error);
+//     res.status(500).json({ message: 'Error submitting answer', error });
+//   }
+// };
+
+
+
+
+
+
+
+
+// exports.submitAnswer = async (req, res) => {
+//   try {
+//     const student_id = req.user.id; // Extracted from the JWT token by verifyStudent middleware
+//     const { domain_id, question_id, submitted_options, points } = req.body;
+
+//     // Fetch the question to retrieve the correct answers
+//     const question = await MCQQuestion.findOne({
+//       where: { id: question_id },
+//       attributes: ['id', 'correct_answers'],
+//       raw: true
+//     });
+
+//     if (!question) {
+//       return res.status(404).json({ message: 'Question not found' });
+//     }
+
+//     // Check if an answer already exists for this question
+//     let answer = await StudentMcqAnswer.findOne({
+//       where: { student_id, domain_id, question_id }
+//     });
+
+//     if (answer) {
+//       // Update the existing answer
+//       await answer.update({
+//         submitted_options,
+//         is_attempted: 1,
+//         points
+//       });
+//     } else {
+//       // Create a new answer record
+//       answer = await StudentMcqAnswer.create({
+//         student_id,
+//         domain_id,
+//         question_id,
+//         submitted_options,
+//         is_attempted: 1,
+//         points
+//       });
+//     }
+
+//     // Return the answer along with the correct answers
+//     res.status(200).json({
+//       message: 'Answer submitted successfully',
+//       answer,
+//       correct_answers: question.correct_answers
+//     });
+//   } catch (error) {
+//     console.error('Error submitting answer:', error);
+//     res.status(500).json({ message: 'Error submitting answer', error });
+//   }
+// };
+
+
+
 exports.submitAnswer = async (req, res) => {
   try {
-    const { student_id, domain_id, question_id, submitted_options, points } = req.body;
+    const student_id = req.user.id;
+    const { domain_id, question_id, submitted_options } = req.body;
 
-    // Check if the answer already exists
+
+    const question = await MCQQuestion.findOne({
+      where: { id: question_id },
+      attributes: ['id', 'options', 'correct_answers', 'difficulty', 'is_single_answer'],
+      raw: true
+    });
+
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    const allOptions = question.options;
+
+    const submittedAnswers = submitted_options
+      .map(index => allOptions[index]?.trim())
+      .filter(Boolean);
+
+    const correctAnswers = question.correct_answers.map(ans => ans.trim()).sort();
+    const sortedSubmittedAnswers = submittedAnswers.sort();
+
+    let isCorrect = false;
+
+    if (question.is_single_answer) {
+      
+      isCorrect = sortedSubmittedAnswers.length === 1 && sortedSubmittedAnswers[0] === correctAnswers[0];
+    } else {
+     
+      isCorrect = JSON.stringify(correctAnswers) === JSON.stringify(sortedSubmittedAnswers);
+    }
+
+    
+    let points = 0;
+    if (isCorrect) {
+      switch (question.difficulty) {
+        case "Level1":
+          points = 100;
+          break;
+        case "Level2":
+          points = 200;
+          break;
+        case "Level3":
+          points = 300;
+          break;
+        case "Level4":
+          points = 400;
+          break;
+        case "Level5":
+          points = 500;
+          break;
+        default:
+          points = 100;
+      }
+    }
+
+  
     let answer = await StudentMcqAnswer.findOne({
       where: { student_id, domain_id, question_id }
     });
 
     if (answer) {
-      // Update existing answer
       await answer.update({
         submitted_options,
-        is_attempted: true,
+        is_attempted: 1,
         points
       });
     } else {
-      // Create new answer
       answer = await StudentMcqAnswer.create({
         student_id,
         domain_id,
         question_id,
         submitted_options,
-        is_attempted: true,
+        is_attempted: 1,
         points
       });
     }
 
-    res.status(200).json({ message: 'Answer submitted successfully', answer });
+    res.status(200).json({
+      message: 'Answer submitted successfully',
+      answer,
+      correct_answers: question.correct_answers,
+      points_awarded: points
+    });
   } catch (error) {
     console.error('Error submitting answer:', error);
     res.status(500).json({ message: 'Error submitting answer', error });
   }
 };
+
+
+
+
+
 
 
 exports.toggleMarkQuestion = async (req, res) => {
